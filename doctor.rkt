@@ -3,7 +3,7 @@
   (define (doctor-driver-loop name)
     (define (reply user-response)
       (define (change-person phrase)
-        (many-replace '((i you) (me you) (am are) (my your)) phrase)
+        (many-replace '((i you) (me you) (am are) (my your) (are am) (you i) (your my)) phrase)
       )
 
       (define (qualifier)
@@ -13,6 +13,9 @@
             (you feel that)
             (why do you believe)
             (why do you say)
+            (please speak louder, it seemed to me you've said that)
+            (you should pay no attention to the fact that)
+            (is it truth that)
           )
         )
       )
@@ -24,13 +27,16 @@
             (many people have the same sorts of feelings)
             (many of my patients have told me the same thing)
             (please continue)
+            (by the way, what do you think about last United States House of Representatives elections?)
+            (don't you mind listening some Portnoy? It helps)
+            (would you like some soft French buns and tea?)
           )
         )
       )
       
       (cond 
         ((fifty-fifty)
-             (append (qualifier) (change-person user-response))
+          (append (qualifier) (change-person user-response))
         )
         (else 
           (hedge)
@@ -86,7 +92,9 @@
   (list-ref lst (random (length lst)))
 )
 
-(define (many-replace replacement-pairs lst)
+
+
+(define (many-replace-old replacement-pairs lst)
   (cond 
     ((null? replacement-pairs) lst)
     (else
@@ -99,4 +107,29 @@
       )
     )
   )
-)   
+)
+
+(define (replace-word replacement-pairs word)
+  (if (null? replacement-pairs)
+      word
+      (if (equal? (car lst) pattern)
+      )
+  )
+)
+
+(define (many-replace replacement-pairs lst)
+  (cond
+    ((null? lst) '())
+    (else
+      (
+       cons(
+         (replace-word replacement-pairs (car lst))
+         (many-replace replacement-pairs (cdr lst))
+       )
+      )
+    )
+  )
+)  
+ 
+
+
