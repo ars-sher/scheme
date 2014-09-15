@@ -34,16 +34,19 @@
         )
       )
       
-      (let ((strat (strategy))) 
-        (cond 
-          ((= strat 0)
-            (append (qualifier) (change-person user-response))
-          )
-          ((and (= strat 1) (> (length memories) 0))
-            (append '(earlier you said that) (pick-random memories))
-          )
-          (else 
-            (hedge)
+      (let ( (strat (strategy)) (keyword-answer (get-keywords-answer user-response (keywords-answers))) )
+        (if (not (null? keyword-answer))
+          keyword-answer
+          (cond
+            ((= strat 0)
+              (append (qualifier) (change-person user-response))
+            )
+            ((and (= strat 1) (> (length memories) 0))
+              (append '(earlier you said that) (pick-random memories))
+            )
+            (else 
+              (hedge)
+            )
           )
         )
       )
@@ -74,6 +77,74 @@
   (printf "Hello, ~a!\n" name)
   (print '(what seems to be the trouble?))
   (doctor-driver-loop name '())
+)
+
+(define (contains-word? lst word)
+  (if (null? lst)
+      #f
+      (if (equal? (car lst) word)
+        #t
+        (contains-word? (cdr lst) word)
+      )
+  )
+)
+
+(define (search-in-map phrase map)
+  (if (null? phrase)
+    '()
+    (let ( (word (car phrase)) )
+      (if (contains-word? (car map) word)
+        (many-replace  (list (list '__ word)) (pick-random (cadr map)))
+        (search-in-map (cdr phrase) map)
+      )
+    )
+  )
+)
+
+(define (get-keywords-answer phrase answers)
+  (if (null? answers)
+    '()
+    (let ( (search-in-map-res (search-in-map phrase (car answers))) )
+      (if (not (null? search-in-map-res))
+        search-in-map-res
+        (get-keywords-answer phrase (cdr answers))
+      )
+    )
+  )
+)
+
+(define (keywords-answers)
+  '(
+    (
+      (depressed suicide)
+      (
+        (when you feel depressed, go out for an ice cream)
+        (depression is a disease that can be treated)
+      )
+    )
+    (
+      (mother father parents)
+      (
+        (tell me more about your __)
+        (why do you feel that way about your __ ?)
+      )
+    )
+    (
+      (tired lazy)
+      (
+        (get back to work, you sluggard fool!)
+        (you certainly should take a vacation)
+      )
+    )
+    (
+      (loneliness depression desolation bore)
+      (
+        (a career in politics will releive you from the __)
+        (maybe cannabis can suppress the feeling of __)
+        (to get rid of __, try to marry someone)
+      )
+    )
+  )
 )
 
 (define (strategy)
