@@ -1,9 +1,9 @@
 #lang scheme/base
 (define (visit-doctor name)
-  (define (doctor-driver-loop name)
+  (define (doctor-driver-loop name memories)
     (define (reply user-response)
       (define (change-person phrase)
-        (many-replace '((i you) (me you) (am are) (my your) (are am) (you i) (your my)) phrase)
+        (many-replace '((i you) (me you) (am are) (my your) (you i) (are am) (your my)) phrase)
       )
 
       (define (qualifier)
@@ -34,19 +34,28 @@
         )
       )
       
-      (cond 
-        ((fifty-fifty)
-          (append (qualifier) (change-person user-response))
-        )
-        (else 
-          (hedge)
+      (let ((strat (strategy))) 
+        (cond 
+          ((= strat 0)
+            (append (qualifier) (change-person user-response))
+          )
+          ((and (= strat 1) (> (length memories) 0))
+            (append '(earlier you said that) (pick-random memories))
+          )
+          (else 
+            (hedge)
+          )
         )
       )
+    )
+    
+    (define (reply-from-memories)
+      2
     )
 
     (newline)
     (print '**)
-    (let ((user-response (read)))
+    (let ((user-response (read)) )
       (cond
         ((equal? user-response '(goodbye))
           (printf "Goodbye, ~a!\n" name)
@@ -54,7 +63,7 @@
         )
         (else
           (print (reply user-response))
-          (doctor-driver-loop name)
+          (doctor-driver-loop name (cons user-response memories))
         )
       )
     )
@@ -62,58 +71,26 @@
 
   (printf "Hello, ~a!\n" name)
   (print '(what seems to be the trouble?))
-  (doctor-driver-loop name)
+  (doctor-driver-loop name '())
 )
 
-(define (fifty-fifty)
-  (= (random 2) 
-     
-     0)
-)
-
-(define (replace pattern replacement lst)
-  (cond
-    ((null? lst) '())
-    ((equal? (car lst) pattern)
-      (cons
-        replacement
-        (replace pattern replacement (cdr lst))
-      )
-    )
-    (else
-      (cons
-        (car lst)
-        (replace pattern replacement (cdr lst)))
-    )
-  )
+(define (strategy)
+  (random 3)
 )
 
 (define (pick-random lst)
   (list-ref lst (random (length lst)))
 )
 
-
-
-(define (many-replace-old replacement-pairs lst)
-  (cond 
-    ((null? replacement-pairs) lst)
-    (else
-      (let ((pat-rep (car replacement-pairs)))
-        (replace
-          (car pat-rep)
-          (cadr pat-rep)
-          (many-replace (cdr replacement-pairs) lst)
-        )
-      )
-    )
-  )
-)
-
 (define (replace-word replacement-pairs word)
   (if (null? replacement-pairs)
-      word
-      (if (equal? (car lst) pattern)
+    word
+    (let ((pair (car replacement-pairs)))
+      (if (equal? (car pair) word)
+          (cadr pair)
+          (replace-word (cdr replacement-pairs) word)
       )
+    )
   )
 )
 
@@ -121,11 +98,9 @@
   (cond
     ((null? lst) '())
     (else
-      (
-       cons(
+      (cons
          (replace-word replacement-pairs (car lst))
          (many-replace replacement-pairs (cdr lst))
-       )
       )
     )
   )
