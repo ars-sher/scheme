@@ -49,17 +49,19 @@
       )
     )
     
-    (define (reply-from-memories)
-      2
-    )
-
     (newline)
     (print '**)
-    (let ((user-response (read)) )
+    (let ( (user-response (read)) )
       (cond
         ((equal? user-response '(goodbye))
           (printf "Goodbye, ~a!\n" name)
-          (print '(see you next week))
+          (printf "see you next week\n")
+          (let ( (new-name (ask-patient-name)) )
+            (if (equal? new-name 'enough!)
+              (print '(Time to go!))
+              (visit-doctor new-name)
+            )
+          )
         )
         (else
           (print (reply user-response))
@@ -76,6 +78,12 @@
 
 (define (strategy)
   (random 3)
+)
+
+(define (ask-patient-name)
+  (printf "NEXT!\n")
+  (printf "Who are you?\n")
+  (car (read))
 )
 
 (define (pick-random lst)
