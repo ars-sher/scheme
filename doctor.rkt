@@ -147,6 +147,32 @@
   )
 )
 
+
+(define (prob n1 n2)
+  (< (random n2) n1)
+)
+
+(define (check-predicates triples response)
+  (let ( (right-triples (filter (lambda (x) ((car x) response)) triples)) )
+    (map (lambda (x) (cdr x)) right-triples)
+  )
+)
+
+(define (triples)
+  (list
+    (list
+      (lambda (response) #t)
+      (lambda (response) 2)
+      0.5
+    )
+    (list
+      (lambda (response) #f)
+      (lambda (response) 3)
+      0.3
+    )
+  )
+)
+
 (define (strategy)
   (random 3)
 )
