@@ -152,9 +152,13 @@
   (< (random n2) n1)
 )
 
-;random [0;1]
-(define (rand)
-  (/ (random 1001) 1000)
+(define (get-response-from-predicates response)
+  (let ( (f (pick-func (check-predicates (triples) response))) )
+    (if (null? f)
+      '()
+      (f response)
+    )
+  )
 )
 
 (define (check-predicates triples response)
@@ -165,7 +169,7 @@
 
 (define (pick-func func-weight-pairs)
   (define (rand)
-    (/ (random 1001) 1000)
+    (/ (random 1000001) 1000000)
   )
   
   (define (normalize-weights)
@@ -183,25 +187,37 @@
     )
   )
   
-  2
+  (define (pick-func-rec func-p-pairs outcome checked)
+    (if (null? func-p-pairs)
+      '()
+      (let ( (next (+ checked (cadar func-p-pairs))) )
+        (if (<= outcome next)
+          (caar func-p-pairs)
+          (pick-func-rec (cdr func-p-pairs) outcome next)
+        )
+      )
+    )
+  )
+  
+  (pick-func-rec (normalize-weights) (rand) 0)
 )
 
 (define (triples)
   (list
     (list
       (lambda (response) #t)
-      (lambda (response) 2)
-      2
+      (lambda (response) 1)
+      0
     )
     (list
-      (lambda (response) #f)
-      (lambda (response) 3)
-      4
+      (lambda (response) #t)
+      (lambda (response) 2)
+      100
     )
     (list
       (lambda (response) #t)
       (lambda (response) 3)
-      4
+      100
     )
   )
 )
