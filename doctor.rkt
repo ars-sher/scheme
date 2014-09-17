@@ -147,9 +147,14 @@
   )
 )
 
-
+;p(true) = n1 / n2
 (define (prob n1 n2)
   (< (random n2) n1)
+)
+
+;random [0;1]
+(define (rand)
+  (/ (random 1001) 1000)
 )
 
 (define (check-predicates triples response)
@@ -158,17 +163,45 @@
   )
 )
 
+(define (pick-func func-weight-pairs)
+  (define (rand)
+    (/ (random 1001) 1000)
+  )
+  
+  (define (normalize-weights)
+    (define (get-sum)
+      (let ( (weights (map (lambda (x) (cadr x)) func-weight-pairs)) )
+        (foldl + 0 weights)
+      )
+    )
+    
+    (let ( (sum (get-sum)))
+      (map
+        (lambda (x) (list (car x) (/ (cadr x) sum)))
+        func-weight-pairs
+      )
+    )
+  )
+  
+  2
+)
+
 (define (triples)
   (list
     (list
       (lambda (response) #t)
       (lambda (response) 2)
-      0.5
+      2
     )
     (list
       (lambda (response) #f)
       (lambda (response) 3)
-      0.3
+      4
+    )
+    (list
+      (lambda (response) #t)
+      (lambda (response) 3)
+      4
     )
   )
 )
