@@ -208,19 +208,35 @@
 (define (triples)
   (list
     (list
-      (lambda (response) #t)
-      (lambda (response) '(please go on))
-      1
+      (lambda (response)
+         (let ( (keyword-answer (get-keywords-answer response (keywords-answers))) )
+           (not (null? keyword-answer))
+         )
+      )
+      (lambda (response)
+         (get-keywords-answer response (keywords-answers))
+      )
+      100
     )
     (list
       (lambda (user-response) (< (length user-response) 3))
       (lambda (response) '(Could you say more?))
-      10
+      100
     )
     (list
       (lambda (response) #t)
-      (lambda (response) (list '(tell me more about) response))
-      20
+      (lambda (response) (append (qualifier) (change-person response)))
+      100
+    )
+    (list
+      (lambda (response) (> (length memories) 0))
+      (lambda (response) (append '(earlier you said that) (pick-random memories)))
+      100
+    )
+    (list
+      (lambda (response) #t)
+      (lambda (response) (hedge))
+      100
     )
   )
 )
