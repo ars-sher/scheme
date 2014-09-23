@@ -121,25 +121,7 @@
         )
       )
       
-      (let ( (strat (strategy)) (keyword-answer (get-keywords-answer user-response (keywords-answers))) )
-        (if (not (null? keyword-answer))
-          keyword-answer
-          (cond
-            ((= strat 0)
-              (append (qualifier) (change-person user-response))
-            )
-            ((and (= strat 1) (> (length memories) 0))
-              (append '(earlier you said that) (pick-random memories))
-            )
-            ((= strat 2)
-             (get-response-from-predicates user-response)
-            )
-            (else 
-              (hedge)
-            )
-          )
-        )
-      )
+      (get-response-from-predicates user-response)
     )
     
     (newline)
