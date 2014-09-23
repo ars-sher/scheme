@@ -44,6 +44,9 @@
             ((and (= strat 1) (> (length memories) 0))
               (append '(earlier you said that) (pick-random memories))
             )
+            ((= strat 2)
+             (get-response-from-predicates user-response)
+            )
             (else 
               (hedge)
             )
@@ -206,24 +209,24 @@
   (list
     (list
       (lambda (response) #t)
-      (lambda (response) 1)
-      0
+      (lambda (response) '(please go on))
+      1
+    )
+    (list
+      (lambda (user-response) (< (length user-response) 3))
+      (lambda (response) '(Could you say more?))
+      10
     )
     (list
       (lambda (response) #t)
-      (lambda (response) 2)
-      100
-    )
-    (list
-      (lambda (response) #t)
-      (lambda (response) 3)
-      100
+      (lambda (response) (list '(tell me more about) response))
+      20
     )
   )
 )
 
 (define (strategy)
-  (random 3)
+  (random 4)
 )
 
 (define (ask-patient-name)
