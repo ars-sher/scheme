@@ -19,6 +19,93 @@
           )
         )
       )
+      
+      (define (get-response-from-predicates response)
+        (let ( (f (pick-func (check-predicates (triples) response))) )
+          (if (null? f)
+            '()
+            (f response)
+          )
+        )
+      )
+
+      (define (check-predicates triples response)
+        (let ( (right-triples (filter (lambda (x) ((car x) response)) triples)) )
+          (map (lambda (x) (cdr x)) right-triples)
+        )
+      )
+
+      (define (pick-func func-weight-pairs)
+        (define (rand)
+          (/ (random 1000001) 1000000)
+        )
+  
+        (define (normalize-weights)
+          (define (get-sum)
+            (let ( (weights (map (lambda (x) (cadr x)) func-weight-pairs)) )
+              (foldl + 0 weights)
+            )
+          )
+    
+          (let ( (sum (get-sum)))
+            (map
+              (lambda (x) (list (car x) (/ (cadr x) sum)))
+              func-weight-pairs
+            )
+          )
+        )
+  
+        (define (pick-func-rec func-p-pairs outcome checked)
+          (if (null? func-p-pairs)
+            '()
+            (let ( (next (+ checked (cadar func-p-pairs))) )
+              (if (<= outcome next)
+                (caar func-p-pairs)
+                (pick-func-rec (cdr func-p-pairs) outcome next)
+              )
+            )
+          )
+        )
+  
+       (pick-func-rec (normalize-weights) (rand) 0)
+     )
+
+     (define (triples)
+       (list
+         (list
+           (lambda (response)
+             (let ( (keyword-answer (get-keywords-answer response (keywords-answers))) )
+               (not (null? keyword-answer))
+             )
+           )
+           (lambda (response)
+             (get-keywords-answer response (keywords-answers))
+           )
+           100
+        )
+        (list
+          (lambda (user-response) (< (length user-response) 3))
+          (lambda (response) '(Could you say more?))
+          100
+        )
+        (list
+          (lambda (response) #t)
+          (lambda (response) (append (qualifier) (change-person response)))
+          100
+        )
+        (list
+          (lambda (response) (> (length memories) 0))
+          (lambda (response) (append '(earlier you said that) (pick-random memories)))
+          100
+        )
+        (list
+          (lambda (response) #t)
+          (lambda (response) (hedge))
+         100
+        )
+      )
+    )
+
 
       (define (hedge)
         (pick-random
@@ -155,91 +242,6 @@
   (< (random n2) n1)
 )
 
-(define (get-response-from-predicates response)
-  (let ( (f (pick-func (check-predicates (triples) response))) )
-    (if (null? f)
-      '()
-      (f response)
-    )
-  )
-)
-
-(define (check-predicates triples response)
-  (let ( (right-triples (filter (lambda (x) ((car x) response)) triples)) )
-    (map (lambda (x) (cdr x)) right-triples)
-  )
-)
-
-(define (pick-func func-weight-pairs)
-  (define (rand)
-    (/ (random 1000001) 1000000)
-  )
-  
-  (define (normalize-weights)
-    (define (get-sum)
-      (let ( (weights (map (lambda (x) (cadr x)) func-weight-pairs)) )
-        (foldl + 0 weights)
-      )
-    )
-    
-    (let ( (sum (get-sum)))
-      (map
-        (lambda (x) (list (car x) (/ (cadr x) sum)))
-        func-weight-pairs
-      )
-    )
-  )
-  
-  (define (pick-func-rec func-p-pairs outcome checked)
-    (if (null? func-p-pairs)
-      '()
-      (let ( (next (+ checked (cadar func-p-pairs))) )
-        (if (<= outcome next)
-          (caar func-p-pairs)
-          (pick-func-rec (cdr func-p-pairs) outcome next)
-        )
-      )
-    )
-  )
-  
-  (pick-func-rec (normalize-weights) (rand) 0)
-)
-
-(define (triples)
-  (list
-    (list
-      (lambda (response)
-         (let ( (keyword-answer (get-keywords-answer response (keywords-answers))) )
-           (not (null? keyword-answer))
-         )
-      )
-      (lambda (response)
-         (get-keywords-answer response (keywords-answers))
-      )
-      100
-    )
-    (list
-      (lambda (user-response) (< (length user-response) 3))
-      (lambda (response) '(Could you say more?))
-      100
-    )
-    (list
-      (lambda (response) #t)
-      (lambda (response) (append (qualifier) (change-person response)))
-      100
-    )
-    (list
-      (lambda (response) (> (length memories) 0))
-      (lambda (response) (append '(earlier you said that) (pick-random memories)))
-      100
-    )
-    (list
-      (lambda (response) #t)
-      (lambda (response) (hedge))
-      100
-    )
-  )
-)
 
 (define (strategy)
   (random 4)
