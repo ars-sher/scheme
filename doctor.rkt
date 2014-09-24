@@ -81,28 +81,28 @@
            (lambda (response)
              (get-keywords-answer response (keywords-answers))
            )
+           1
+         )
+         (list
+           (lambda (user-response) (< (length user-response) 3))
+           (lambda (response) '(Could you say more?))
+           1
+         )
+         (list
+           (lambda (response) #t)
+           (lambda (response) (append (qualifier) (change-person response)))
            100
-        )
-        (list
-          (lambda (user-response) (< (length user-response) 3))
-          (lambda (response) '(Could you say more?))
-          100
-        )
-        (list
-          (lambda (response) #t)
-          (lambda (response) (append (qualifier) (change-person response)))
-          100
-        )
-        (list
-          (lambda (response) (> (length memories) 0))
-          (lambda (response) (append '(earlier you said that) (pick-random memories)))
-          100
-        )
-        (list
-          (lambda (response) #t)
-          (lambda (response) (hedge))
-         100
-        )
+         )
+         (list
+           (lambda (response) (> (length memories) 0))
+           (lambda (response) (append '(earlier you said that) (pick-random memories)))
+           1000
+         )
+         (list
+           (lambda (response) #t)
+           (lambda (response) (hedge))
+          1
+         )
       )
     )
 
