@@ -27,9 +27,10 @@
   (let
     ( 
       (N (length weights))
-      (SIZE 6)
+      (MUTATION_PROBABILITY (* 1.0 (/ 1 (length weights))))
+      (SIZE 10)
       (CROSSOVER_PERCENT 0.7)
-      (GENS_NUMB_LIMIT 1)
+      (GENS_NUMB_LIMIT 10)
       (TOURNAMENT_PARTICIPANTS 2)
     )
     ; returns list of binary chromosomes
@@ -155,26 +156,49 @@
       )
     )
 
-    (define (knapsack-cycle population generation-numb)
-      (let ( (solutions-fitnesses (map solution-fitness population)) )
-        (if (> generation-numb GENS_NUMB_LIMIT) 
-          (let ( (best-solution (max solutions-fitnesses (lambda (x) (cdr x)))) )
-            (cons 
-              (calc-weight-or-fit (car best-solution) weights)
-              (cons (cdr best-solution) (cons (car best-solution) '()))
-            )
+    (define (mutate chromosome)
+      (map
+        (lambda (x)
+          (if (< (random) MUTATION_PROBABILITY)
+            (modulo (+ x 1) 2)
+            x
           )
-          (let ( (parents (choose-parents solutions-fitnesses)) )
-            (let ( (new-generation (give-birth parents)) )
-              ;(cons solutions-fitnesses new-generation)
-              (knapsack-cycle new-generation (+ generation-numb 1))
+        )
+        chromosome
+      )
+    )
+
+    (define (knapsack-cycle population generation-numb last-fitness fitness-stability)
+      (let ( (solutions-fitnesses (map solution-fitness population)) )
+        (let ( (best-solution (max solutions-fitnesses (lambda (x) (cdr x)))) )
+          ;(if (> generation-numb GENS_NUMB_LIMIT) 
+          (if (= fitness-stability 25) 
+            (cons 
+                (calc-weight-or-fit (car best-solution) weights)
+                (cons (cdr best-solution) (cons (car best-solution) '()))
+            )
+            (let ( (parents (choose-parents solutions-fitnesses)) )
+              (let ( (new-generation (give-birth parents)) )
+                (let ( (new-generation-mutated (map mutate new-generation)) )
+                  ;(cons solutions-fitnesses new-generation)
+                  (knapsack-cycle 
+                    new-generation-mutated 
+                    (+ generation-numb 1)
+                    (cdr best-solution)
+                    (if (= last-fitness (cdr best-solution))
+                      (+ 1 fitness-stability)
+                      0
+                    )
+                  )
+                )
+              )
             )
           )
         )
       )
     )
 
-    (knapsack-cycle (initialize-population) 0)
+    (knapsack-cycle (initialize-population) 0 0 0)
     ;(print (knapsack-cycle (initialize-population) 0))
     ;(newline)
     ;'(2 7 (1 2))
