@@ -27,7 +27,7 @@
   (let
     ( 
       (N (length weights))
-      (SIZE 5)
+      (SIZE 6)
       (CROSSOVER_PERCENT 0.7)
       (GENS_NUMB_LIMIT 1)
       (TOURNAMENT_PARTICIPANTS 2)
@@ -51,23 +51,24 @@
       (gen-population '())
     )
 
-    ; returns a pair of solution and its fitness
-    (define (solution-fitness chromosome)
-      (define (calc-weight-or-fit x)
-        (let ( (chromosomes-weights (zip chromosome x)) )
-          (foldl 
-            (lambda (x old)
-              (if (= 1 (car x))
-                (+ old (cdr x))
-                old
-              )
+    ; calculates weight of fitness of chromosome
+    (define (calc-weight-or-fit chromosome x)
+      (let ( (chromosomes-weights (zip chromosome x)) )
+        (foldl 
+          (lambda (x old)
+            (if (= 1 (car x))
+              (+ old (cdr x))
+              old
             )
-            0
-            chromosomes-weights
           )
+          0
+          chromosomes-weights
         )
       )
+    )
 
+    ; returns a pair of solution and its fitness
+    (define (solution-fitness chromosome)
       ; drops random item from chromosome
       (define (drop-random-item)
         (let ( (pos (random N)) )
@@ -81,9 +82,9 @@
         )
       )
 
-      (if (> (calc-weight-or-fit weights) B)
+      (if (> (calc-weight-or-fit chromosome weights) B)
         (solution-fitness (drop-random-item))
-        (cons chromosome (calc-weight-or-fit costs))
+        (cons chromosome (calc-weight-or-fit chromosome costs))
       )
     )
 
@@ -100,7 +101,6 @@
       (define (run-tournament)
         (define (run-tournament-cycle res res-size)
           (if (= res-size TOURNAMENT_PARTICIPANTS)
-            ;TODO
             (car (max res (lambda (x) (cdr x)))) 
             (run-tournament-cycle (cons (list-ref solutions-fitnesses (random SIZE)) res) (+ res-size 1))
           )
@@ -112,21 +112,72 @@
       (choose-parents-cycle '() 0)
     )
 
-    (define (knapsack-cycle population generation-numb)
-      (if (> generation-numb GENS_NUMB_LIMIT) 
-        population
-        (let ( (solutions-fitnesses (map solution-fitness population)) )
-          (let ( (parents (choose-parents solutions-fitnesses)) )
-            ; (map (lambda (x) (car x)) solutions-fitnesses)
-            (cons solutions-fitnesses parents)
+    ; combines parents and makes crossover, giving birth to new generation
+    (define (give-birth parents)
+      (define (crossover p1 p2)
+        (if (> (random) CROSSOVER_PERCENT)
+          (cons p1 p2)
+          (let ( (pos (quotient N 2)) )
+            (let
+              (
+                (head1 (take p1 pos))
+                (head2 (take p2 pos))
+                (tail1 (list-tail p1 pos))
+                (tail2 (list-tail p2 pos))
+              )
+              (cons (append head1 tail2) (append head2 tail1))
+            )
+          )
+        )
+      )
+
+      (define (unite lst)
+        (define (unite-loop lst res)
+          (if (null? lst)
+            res
+            (unite-loop (cdr lst) (cons (caar lst) (cons (cdar lst) res)))
+          )
+        )
+
+        (unite-loop lst '())
+      )
+
+      (let ( (pos (quotient SIZE 2)) )
+        (let
+          (
+            (parents1 (take parents pos))
+            (parents2 (list-tail parents pos))
+          )
+          (unite
+            (map crossover parents1 parents2)
           )
         )
       )
     )
 
-    (print (knapsack-cycle (initialize-population) 0))
-    (newline)
-    '(2 7 (1 2))
+    (define (knapsack-cycle population generation-numb)
+      (let ( (solutions-fitnesses (map solution-fitness population)) )
+        (if (> generation-numb GENS_NUMB_LIMIT) 
+          (let ( (best-solution (max solutions-fitnesses (lambda (x) (cdr x)))) )
+            (cons 
+              (calc-weight-or-fit (car best-solution) weights)
+              (cons (cdr best-solution) (cons (car best-solution) '()))
+            )
+          )
+          (let ( (parents (choose-parents solutions-fitnesses)) )
+            (let ( (new-generation (give-birth parents)) )
+              ;(cons solutions-fitnesses new-generation)
+              (knapsack-cycle new-generation (+ generation-numb 1))
+            )
+          )
+        )
+      )
+    )
+
+    (knapsack-cycle (initialize-population) 0)
+    ;(print (knapsack-cycle (initialize-population) 0))
+    ;(newline)
+    ;'(2 7 (1 2))
   )
 )
 
@@ -157,5 +208,12 @@
   (max-loop (cdr lst) (car lst))
 )
 
+(define (flatten x)
+  (cond
+    ((null? x) '())
+    ((not (pair? x)) (list x))
+    (else (append (flatten (car x)) (flatten (cdr x))))
+  )
+)
+
 (main '(1 1 2 2) '(4 3 2 1) 3 4)
-;(max '(1 2 3) (lambda (x) (modulo x 2)))
