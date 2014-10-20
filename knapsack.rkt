@@ -30,6 +30,7 @@
       (SIZE 5)
       (CROSSOVER_PERCENT 0.7)
       (GENS_NUMB_LIMIT 1)
+      (TOURNAMENT_PARTICIPANTS 2)
     )
     ; returns list of binary chromosomes
     (define (initialize-population)
@@ -86,12 +87,39 @@
       )
     )
 
+    ; chooses SIZE parents
+    (define (choose-parents solutions-fitnesses)
+      (define (choose-parents-cycle res res-size)
+        (if (= res-size SIZE)
+          res
+          (choose-parents-cycle (cons (run-tournament) res) (+ res-size 1))
+        )
+      )
+
+      ; chooses one parent in tournament
+      (define (run-tournament)
+        (define (run-tournament-cycle res res-size)
+          (if (= res-size TOURNAMENT_PARTICIPANTS)
+            ;TODO
+            (car (max res (lambda (x) (cdr x)))) 
+            (run-tournament-cycle (cons (list-ref solutions-fitnesses (random SIZE)) res) (+ res-size 1))
+          )
+        )
+
+        (run-tournament-cycle '() 0)
+      )
+
+      (choose-parents-cycle '() 0)
+    )
+
     (define (knapsack-cycle population generation-numb)
       (if (> generation-numb GENS_NUMB_LIMIT) 
         population
         (let ( (solutions-fitnesses (map solution-fitness population)) )
-          ; (map (lambda (x) (car x)) solutions-fitnesses)
-          solutions-fitnesses
+          (let ( (parents (choose-parents solutions-fitnesses)) )
+            ; (map (lambda (x) (car x)) solutions-fitnesses)
+            (cons solutions-fitnesses parents)
+          )
         )
       )
     )
@@ -116,5 +144,18 @@
   (reverse (take-cycle lst '() 0))
 )
 
-(main '(1 1 2 2) '(4 3 2 1) 3 4)
+; returns max element (defined by function f, f returns non-negative numbers) from non-empty list
+(define (max lst f)
+  (define (max-loop lst res)
+    (cond
+      ((null? lst) res)
+      ((> (f (car lst)) (f res)) (max-loop (cdr lst) (car lst)))
+      (else (max-loop (cdr lst) res))
+    )
+  )
 
+  (max-loop (cdr lst) (car lst))
+)
+
+(main '(1 1 2 2) '(4 3 2 1) 3 4)
+;(max '(1 2 3) (lambda (x) (modulo x 2)))
