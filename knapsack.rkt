@@ -52,8 +52,8 @@
 
     ; returns a pair of solution and its fitness
     (define (solution-fitness chromosome)
-      (define (calc-weight)
-        (let ( (chromosomes-weights (zip chromosome weights)) )
+      (define (calc-weight-or-fit x)
+        (let ( (chromosomes-weights (zip chromosome x)) )
           (foldl 
             (lambda (x old)
               (if (= 1 (car x))
@@ -67,7 +67,23 @@
         )
       )
 
-      (cons chromosome (calc-weight))
+      ; drops random item from chromosome
+      (define (drop-random-item)
+        (let ( (pos (random N)) )
+          (let
+            (
+              (head (take chromosome pos))
+              (tail (list-tail chromosome pos))
+            )
+            (append head (cons 0 (cdr tail)))
+          )
+        )
+      )
+
+      (if (> (calc-weight-or-fit weights) B)
+        (solution-fitness (drop-random-item))
+        (cons chromosome (calc-weight-or-fit costs))
+      )
     )
 
     (define (knapsack-cycle population generation-numb)
@@ -88,6 +104,16 @@
 
 (define (zip lst1 lst2)
   (map cons lst1 lst2)
+)
+
+(define (take lst pos)
+  (define (take-cycle lst res n)
+    (if (= n pos)
+      res
+      (take-cycle (cdr lst) (cons (car lst) res) (+ n 1))
+    )
+  )
+  (reverse (take-cycle lst '() 0))
 )
 
 (main '(1 1 2 2) '(4 3 2 1) 3 4)
