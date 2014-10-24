@@ -168,11 +168,25 @@
       )
     )
 
+    (define (dbg generation-numb population solutions-fitnesses best-solution last-fitness fitness-stability)
+      (printf "generation number: ~a\n" generation-numb)
+      (printf "generation:\n") 
+      (for ([i (in-list population)])
+         (displayln i))
+      (printf "solutions-fitnesses:\n") 
+      (for ([i (in-list solutions-fitnesses)])
+         (displayln i))     
+      (printf "best solution: ~a\n" best-solution)
+      (printf "last-fitness: ~a\n" last-fitness)
+      (printf "fitness-stability: ~a\n" fitness-stability)
+    )
+
     (define (knapsack-cycle population generation-numb last-fitness fitness-stability)
       (let ( (solutions-fitnesses (map solution-fitness population)) )
         (let ( (best-solution (max solutions-fitnesses (lambda (x) (cdr x)))) )
           ;(if (> generation-numb GENS_NUMB_LIMIT) 
-          (if (= fitness-stability 25) 
+          (dbg generation-numb population solutions-fitnesses best-solution last-fitness fitness-stability)
+          (if (= fitness-stability 3) 
             (cons 
                 (calc-weight-or-fit (car best-solution) weights)
                 (cons (cdr best-solution) (cons (car best-solution) '()))
@@ -199,9 +213,6 @@
     )
 
     (knapsack-cycle (initialize-population) 0 0 0)
-    ;(print (knapsack-cycle (initialize-population) 0))
-    ;(newline)
-    ;'(2 7 (1 2))
   )
 )
 
@@ -240,4 +251,6 @@
   )
 )
 
+(newline)
 (main '(1 1 2 2) '(4 3 2 1) 3 4)
+(newline)
