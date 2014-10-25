@@ -32,6 +32,7 @@
       (CROSSOVER_PERCENT 0.7)
       (GENS_NUMB_LIMIT 10)
       (TOURNAMENT_PARTICIPANTS 2)
+      (MAX_STABILITY 25)
     )
     ; returns list of binary chromosomes
     (define (initialize-population)
@@ -72,14 +73,13 @@
     (define (solution-fitness chromosome)
       ; drops random item from chromosome
       (define (drop-random-item)
-        (let ( (pos (random N)) )
-          (let
-            (
-              (head (take chromosome pos))
-              (tail (list-tail chromosome pos))
-            )
-            (append head (cons 0 (cdr tail)))
+        (let*
+          (
+            (pos (random N))
+            (head (take chromosome pos))
+            (tail (list-tail chromosome pos))
           )
+          (append head (cons 0 (cdr tail)))
         )
       )
 
@@ -168,7 +168,7 @@
       )
     )
 
-    (define (dbg generation-numb population solutions-fitnesses best-solution last-fitness fitness-stability)
+    (define (dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability)
       (printf "generation number: ~a\n" generation-numb)
       (printf "generation:\n") 
       (for ([i (in-list population)])
@@ -178,34 +178,40 @@
          (displayln i))     
       (printf "best solution: ~a\n" best-solution)
       (printf "last-fitness: ~a\n" last-fitness)
-      (printf "fitness-stability: ~a\n" fitness-stability)
+      (printf "new fitness-stability: ~a\n" new-stability)
     )
 
     (define (knapsack-cycle population generation-numb last-fitness fitness-stability)
-      (let ( (solutions-fitnesses (map solution-fitness population)) )
-        (let ( (best-solution (max solutions-fitnesses (lambda (x) (cdr x)))) )
-          ;(if (> generation-numb GENS_NUMB_LIMIT) 
-          (dbg generation-numb population solutions-fitnesses best-solution last-fitness fitness-stability)
-          (if (= fitness-stability 3) 
-            (cons 
-                (calc-weight-or-fit (car best-solution) weights)
-                (cons (cdr best-solution) (cons (car best-solution) '()))
+      (let*
+        ( 
+          (solutions-fitnesses (map solution-fitness population)) 
+          (best-solution (max solutions-fitnesses (lambda (x) (cdr x))))
+          (new-stability
+            (if (= last-fitness (cdr best-solution))
+              (+ 1 fitness-stability)
+              0
+            )   
+          )
+        )
+        ;(dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability)
+        ;(if (> generation-numb GENS_NUMB_LIMIT) 
+        (if (= new-stability MAX_STABILITY) 
+          (cons 
+              (calc-weight-or-fit (car best-solution) weights)
+              (cons (cdr best-solution) (cons (car best-solution) '()))
+          )
+          (let*
+            (
+              (parents (choose-parents solutions-fitnesses))
+              (new-generation (give-birth parents))
+              (new-generation-mutated (map mutate new-generation))
             )
-            (let ( (parents (choose-parents solutions-fitnesses)) )
-              (let ( (new-generation (give-birth parents)) )
-                (let ( (new-generation-mutated (map mutate new-generation)) )
-                  ;(cons solutions-fitnesses new-generation)
-                  (knapsack-cycle 
-                    new-generation-mutated 
-                    (+ generation-numb 1)
-                    (cdr best-solution)
-                    (if (= last-fitness (cdr best-solution))
-                      (+ 1 fitness-stability)
-                      0
-                    )
-                  )
-                )
-              )
+            ;(cons solutions-fitnesses new-generation)
+            (knapsack-cycle 
+              new-generation-mutated 
+              (+ generation-numb 1)
+              (cdr best-solution)
+              new-stability  
             )
           )
         )
