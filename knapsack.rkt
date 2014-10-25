@@ -17,15 +17,17 @@
   (let ( (result (f weights costs B)) )
     (if (>= (list-ref result 1) K)
       (begin
-        (print #t)
-        (newline)
-        (print (list-ref result 0))
-        (newline)
-        (print (list-ref result 1))
-        (newline)
-        (print (list-ref result 2))
+        (let ( (answer (cons #t result)) )
+          (for ([i (in-list answer)])
+             (displayln i))
+          answer
+        )
       )
-      (print #f)
+      (begin
+        (print #f)
+        (newline)
+        (list #f)
+      )
     )
   )
 )
@@ -297,7 +299,29 @@
 )
 
 (define (gen-test)
-  2
+  ;generated uncorrelated test
+  (define (gen-uncorrelated) 
+    '((1 1 2 2) (4 3 2 1) 3 4)
+  )
+
+  (let*
+    (
+      (selector (random))
+      (test
+        (cond
+          ((< selector 1) (gen-uncorrelated))
+        )
+      )
+      (weights (list-ref test 0))
+      (costs (list-ref test 1))
+      (B (list-ref test 2))
+      (solution (simple-solve weights costs B))  
+      (max-fit (list-ref solution 1))
+    )
+    ;(cons task (main-dummy weights costs B K))
+    (simple-solve weights costs B) 
+    max-fit
+  )
 )
 
 ;support functions
@@ -336,7 +360,8 @@
   )
 )
 
-(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
-(newline)
-(newline)
-(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
+;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
+;(newline)
+;(newline)
+;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
+(gen-test)
