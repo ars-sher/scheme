@@ -22,7 +22,7 @@
 )
 
 
-; returns (sum_weight sum_cost list_of_item_indexes)
+; returns (sum_weight sum_cost chromosome)
 (define (knapsack weights costs B)
   (let
     ( 
@@ -231,7 +231,7 @@
     (let ( (chromosomes-weights (zip chromosome x)) )
       (foldl 
         (lambda (x old)
-          (if (= 1 (car x))
+          (if (equal? #t (car x))
             (+ old (cdr x))
             old
           )
@@ -252,44 +252,37 @@
 
   ;format answer
   (define (return vect fit)
-    vect
+    (cons (calc-weight vect)
+      (cons fit
+        (cons vect '())
+      )
+    )
+  )
+
+  ;next candidate for solution
+  (define (give-next v)
+    (define (give-next-cycle watched vect)
+      (cond
+        ((null? vect) '())
+        ((equal? (car vect) #f) (append watched (cons #t (cdr vect))))
+        (else (give-next-cycle (cons #f watched) (cdr vect))) 
+      )        
+    )
+
+    (give-next-cycle '() v)
   )
 
   (define (simple-solve-cycle curr-vect best-vect best-fit)
-    ;next candidate for solution
-    (define (give-next)
-      (define (give-next-cycle watched vect)
-        (cond
-          ((null? vect) '())
-          ((equal? (car vect) #f) (append watched (cons #t (cdr vect))))
-          (else (give-next-cycle (cons #f watched) (cdr vect))) 
-        )        
-      )
-
-      (give-next-cycle '() curr-vect)
-    )
-
-    (let ( (next-vect (give-next)) )
-      (display curr-vect)
-      (newline)
+    (let ( (next-vect (give-next curr-vect)) )
       (cond
-        ((null? next-vect) 'hello)
-        (else 
-          (simple-solve-cycle next-vect best-vect best-fit)
+        ((null? next-vect) (return best-vect best-fit))
+        (
+          (and (<= (calc-weight next-vect) B) (> (calc-fit next-vect) best-fit))
+          (simple-solve-cycle next-vect next-vect (calc-fit next-vect))
         )
+        (else (simple-solve-cycle next-vect best-vect best-fit))
       )
     )
-
-    ;(let ( (next-vect (give-next)) )
-    ;  (cond
-    ;    ((null? next-vect) (return best-vect best-fit))
-    ;    (
-    ;      (and (<= (calc-weight next-vect) B) (> (calc-fit next-vect) best-fit))
-    ;      (simple-solve-cycle next-vect next-vect (calc-fit next-vect))
-    ;    )
-    ;    (else (simple-solve-cycle next-vect best-vect best-fit))
-    ;  )
-    ;)
   )
   
   ;initialize brute-force
