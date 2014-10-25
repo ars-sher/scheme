@@ -3,9 +3,18 @@
 ; call from the interpreter:
 ; !racket %:p
 
-; call example: (main '(1 1 2 2) '(4 3 2 1) 3 4)
-(define (main weights costs B K)
-  (let ( (result (knapsack weights costs B)) )
+; call example: (main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
+
+(define (main-genetic weights costs B K)
+  (main knapsack weights costs B K)
+)
+
+(define (main-dummy weights costs B K)
+  (main simple-solve weights costs B K)
+)
+
+(define (main f weights costs B K)
+  (let ( (result (f weights costs B)) )
     (if (>= (list-ref result 1) K)
       (begin
         (print #t)
@@ -222,10 +231,6 @@
   )
 )
 
-(define (gen-test)
-  2
-)
-
 (define (simple-solve weights costs B)
   (define (calc-weight-or-fit chromosome x)
     (let ( (chromosomes-weights (zip chromosome x)) )
@@ -291,6 +296,11 @@
   )
 )
 
+(define (gen-test)
+  2
+)
+
+;support functions
 (define (zip lst1 lst2)
   (map cons lst1 lst2)
 )
@@ -326,6 +336,7 @@
   )
 )
 
-;(main '(1 1 2 2) '(4 3 2 1) 3 4)
-;(newline)
-(simple-solve '(1 1 2 2) '(4 3 2 1) 3)
+(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
+(newline)
+(newline)
+(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
