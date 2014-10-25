@@ -222,6 +222,82 @@
   )
 )
 
+(define (gen-test)
+  2
+)
+
+(define (simple-solve weights costs B)
+  (define (calc-weight-or-fit chromosome x)
+    (let ( (chromosomes-weights (zip chromosome x)) )
+      (foldl 
+        (lambda (x old)
+          (if (= 1 (car x))
+            (+ old (cdr x))
+            old
+          )
+        )
+        0
+        chromosomes-weights
+      )
+    )
+  )
+
+  (define (calc-weight vect)
+    (calc-weight-or-fit vect weights)
+  )
+
+  (define (calc-fit vect)
+    (calc-weight-or-fit vect costs)
+  )
+
+  ;format answer
+  (define (return vect fit)
+    vect
+  )
+
+  (define (simple-solve-cycle curr-vect best-vect best-fit)
+    ;next candidate for solution
+    (define (give-next)
+      (define (give-next-cycle watched vect)
+        (cond
+          ((null? vect) '())
+          ((equal? (car vect) #f) (append watched (cons #t (cdr vect))))
+          (else (give-next-cycle (cons #f watched) (cdr vect))) 
+        )        
+      )
+
+      (give-next-cycle '() curr-vect)
+    )
+
+    (let ( (next-vect (give-next)) )
+      (display curr-vect)
+      (newline)
+      (cond
+        ((null? next-vect) 'hello)
+        (else 
+          (simple-solve-cycle next-vect best-vect best-fit)
+        )
+      )
+    )
+
+    ;(let ( (next-vect (give-next)) )
+    ;  (cond
+    ;    ((null? next-vect) (return best-vect best-fit))
+    ;    (
+    ;      (and (<= (calc-weight next-vect) B) (> (calc-fit next-vect) best-fit))
+    ;      (simple-solve-cycle next-vect next-vect (calc-fit next-vect))
+    ;    )
+    ;    (else (simple-solve-cycle next-vect best-vect best-fit))
+    ;  )
+    ;)
+  )
+  
+  ;initialize brute-force
+  (let ( (zeros (build-list (length weights) (lambda (x) #f))) )
+    (simple-solve-cycle zeros zeros 0)
+  )
+)
+
 (define (zip lst1 lst2)
   (map cons lst1 lst2)
 )
@@ -257,6 +333,6 @@
   )
 )
 
-(newline)
-(main '(1 1 2 2) '(4 3 2 1) 3 4)
-(newline)
+;(main '(1 1 2 2) '(4 3 2 1) 3 4)
+;(newline)
+(simple-solve '(1 1 2 2) '(4 3 2 1) 3)
