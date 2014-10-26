@@ -18,14 +18,13 @@
     (if (>= (list-ref result 1) K)
       (begin
         (let ( (answer (cons #t result)) )
-          (for ([i (in-list answer)])
-             (displayln i))
+          ;(print-lst answer)
           answer
         )
       )
       (begin
-        (print #f)
-        (newline)
+        ;(print #f)
+        ;(newline)
         (list #f)
       )
     )
@@ -301,8 +300,9 @@
 (define (gen-test)
   (let*
     (
-      (FALSE_PROBABILITY 0.01)
+      (FALSE_PROBABILITY 0.5)
       (WEIGHT_MAX 2)
+      ; for uncorrelated tests only
       (COST_MAX 4)
       (ITEMS_MAX 4)
       (STRONG_CORRELATING_CONST 10)
@@ -310,12 +310,13 @@
       (items-numb (+ 1 (random ITEMS_MAX)))
       (W (+ 1 (random (* items-numb WEIGHT_MAX))))
       (weights (build-list items-numb (lambda (x) (+ 1 (random WEIGHT_MAX)))))
-      (k (+ 1 (random 10)))
+      (k (+ 1 (random 1)))
     )
 
     ; cost and weight are independent
     (define (gen-uncorrelated) 
       (list
+        "uncorrelated"
         weights
         (build-list items-numb (lambda (x) (+ 1 (random COST_MAX))))
         W
@@ -326,6 +327,7 @@
     (define (gen-weakly-correlated)
       (let ( (weights-shifted (map (lambda (x) (+ WEAKLY_CORR_NBH x)) weights)) )
         (list
+          "weakly-correlated"
           weights-shifted
           (map (lambda (x) (+ (- x WEAKLY_CORR_NBH) (random (* 2 (+ 1 WEAKLY_CORR_NBH))))) weights-shifted)
           (+ W WEAKLY_CORR_NBH)
@@ -336,6 +338,7 @@
     ; cost is linear fuction of weight + const
     (define (gen-strongly-correlated)
       (list
+        "strongly correlated"
         weights
         (map (lambda (x) (+ (* k x) STRONG_CORRELATING_CONST)) weights)
         W
@@ -345,6 +348,7 @@
     ; cost is linearly depends on weight
     (define (gen-subset-sum)
       (list
+        "subset-sum"
         weights
         (map (lambda (x) (* k x)) weights)
         W
@@ -363,9 +367,9 @@
             (else  (gen-subset-sum))
           )
         )
-        (weights (list-ref test 0))
-        (costs (list-ref test 1))
-        (B (list-ref test 2))
+        (weights (list-ref test 1))
+        (costs (list-ref test 2))
+        (B (list-ref test 3))
         (solution (simple-solve weights costs B))  
         (max-fit (list-ref solution 1))
       )
@@ -380,6 +384,83 @@
       )
     )
   )
+)
+
+(define (start-testing n [debug-level 0])
+  ; prints test info, if debug-level requires it
+  (define (print-test success? test-type test-task test-answer given-answer)
+    (display "test type: ")
+    (displayln test-type) 
+    (print-lst test-task "task:")
+    (newline)
+    (print-lst test-answer "right answer:")
+    (print-lst given-answer "given answer:")
+    (if success?
+      (displayln "Test has passed")
+      (displayln "Test has failed")
+    )
+    (displayln "_________________________________")
+  )
+
+  (define (testing-cycle total-answers right-answers)
+    (if (= total-answers n)
+      (begin
+        (newline)
+        (displayln "Testing is finished")
+        (printf "Tests have passed: ~a\n" right-answers)
+        (printf "Total tests:  ~a\n" total-answers)
+        (printf "Precision: ~a\n" (/ right-answers (* 1.0 total-answers)))
+      )
+      (let*
+        (
+          (test (gen-test))
+          (test-type (caar test))
+          (test-task (cdar test))
+          (test-answer (cdr test))
+          (weights (list-ref test-task 0))
+          (costs (list-ref test-task 1))
+          (B (list-ref test-task 2))
+          (K (list-ref test-task 3))
+          (given-answer (main-genetic weights costs B K))
+          (t-or-f-right (car test-answer))
+          (t-or-f-given (car given-answer))
+        )
+
+        ; compare right and given answers
+        (cond
+          (
+            (and (equal? #f t-or-f-right) (equal? #f t-or-f-given))
+            (begin
+              (when (>= debug-level 2) (print-test #t test-type test-task test-answer given-answer))
+              (testing-cycle (+ 1 total-answers) (+ 1 right-answers))
+            )
+          )
+          (
+            ; certainly wrong answer
+            (xor t-or-f-right t-or-f-given)
+            (begin
+              (when (>= debug-level 1) (print-test #f test-type test-task test-answer given-answer))
+              (testing-cycle (+ 1 total-answers) right-answers)
+            )
+          )
+          (else
+            (if (= (list-ref test-answer 2) (list-ref given-answer 2))
+              (begin
+                (when (>= debug-level 2) (print-test #t test-type test-task test-answer given-answer))
+                (testing-cycle (+ 1 total-answers) (+ 1 right-answers))
+              )
+              (begin
+                (when (>= debug-level 1) (print-test #f test-type test-task test-answer given-answer))
+                (testing-cycle (+ 1 total-answers) right-answers)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+
+  (testing-cycle 0 0)
 )
 
 ;support functions
@@ -429,8 +510,24 @@
   (inexact->exact (ceiling (* number (/ p 100.0))))
 )
 
+(define (xor b1 b2)
+  (if (equal? b1 b2)
+    #f
+    #t
+  )
+)
+
+(define (print-lst lst [title '()])
+  (if (string? title)
+    (displayln title)
+    '()
+  )
+  (for ([i (in-list lst)])
+    (displayln i))
+)
+
 ;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
 ;(newline)
 ;(newline)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(gen-test)
+(start-testing 1 2)
