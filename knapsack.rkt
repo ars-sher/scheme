@@ -299,28 +299,35 @@
 )
 
 (define (gen-test)
-  ;generated uncorrelated test
-  (define (gen-uncorrelated) 
-    '((1 1 2 2) (4 3 2 1) 3 4)
-  )
-
-  (let*
+  (let
     (
-      (selector (random))
-      (test
-        (cond
-          ((< selector 1) (gen-uncorrelated))
-        )
-      )
-      (weights (list-ref test 0))
-      (costs (list-ref test 1))
-      (B (list-ref test 2))
-      (solution (simple-solve weights costs B))  
-      (max-fit (list-ref solution 1))
+      (FALSE_PROBABILITY 0.01)
     )
-    ;(cons task (main-dummy weights costs B K))
-    (simple-solve weights costs B) 
-    max-fit
+    ;generates uncorrelated test
+    (define (gen-uncorrelated) 
+      '((1 1 2 2) (4 3 2 1) 3)
+    )
+
+    (let*
+      (
+        (selector (random))
+        (false-selector (random))
+        (test
+          (cond
+            ((< selector 1) (gen-uncorrelated))
+          )
+        )
+        (weights (list-ref test 0))
+        (costs (list-ref test 1))
+        (B (list-ref test 2))
+        (solution (simple-solve weights costs B))  
+        (max-fit (list-ref solution 1))
+      )
+      (if (<= false-selector FALSE_PROBABILITY)
+        (cons (append-el test (* max-fit 2)) (list #f))
+        (cons (append-el test (quotient max-fit 2)) (cons #t solution))
+      )
+    )
   )
 )
 
@@ -357,6 +364,13 @@
     ((null? x) '())
     ((not (pair? x)) (list x))
     (else (append (flatten (car x)) (flatten (cdr x))))
+  )
+)
+
+; appends element to the end of list
+(define (append-el lst el)
+  (reverse
+    (cons el (reverse lst))
   )
 )
 
