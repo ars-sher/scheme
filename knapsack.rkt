@@ -337,7 +337,7 @@
     (define (gen-strongly-correlated)
       (list
         weights
-        (map (lambda (x) (+ (* k x) STRONG_CORRELATING_CONST) weights))
+        (map (lambda (x) (+ (* k x) STRONG_CORRELATING_CONST)) weights)
         W
       )
     )
@@ -357,7 +357,10 @@
         (false-selector (random))
         (test
           (cond
-            ((< selector 1) (gen-weakly-correlated))
+            ((< selector 0.25) (gen-uncorrelated))
+            ((< selector 0.5) (gen-weakly-correlated))
+            ((< selector 0.75) (gen-strongly-correlated))
+            (else  (gen-subset-sum))
           )
         )
         (weights (list-ref test 0))
