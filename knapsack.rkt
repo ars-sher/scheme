@@ -299,13 +299,56 @@
 )
 
 (define (gen-test)
-  (let
+  (let*
     (
       (FALSE_PROBABILITY 0.01)
+      (WEIGHT_MAX 2)
+      (COST_MAX 4)
+      (ITEMS_MAX 4)
+      (STRONG_CORRELATING_CONST 10)
+      (WEAKLY_CORR_NBH (percent-int WEIGHT_MAX 10))
+      (items-numb (+ 1 (random ITEMS_MAX)))
+      (W (+ 1 (random (* items-numb WEIGHT_MAX))))
+      (weights (build-list items-numb (lambda (x) (+ 1 (random WEIGHT_MAX)))))
+      (k (+ 1 (random 10)))
     )
-    ;generates uncorrelated test
+
+    ; cost and weight are independent
     (define (gen-uncorrelated) 
-      '((1 1 2 2) (4 3 2 1) 3)
+      (list
+        weights
+        (build-list items-numb (lambda (x) (+ 1 (random COST_MAX))))
+        W
+      )
+    )
+
+    ; cost in const neighbourhood of weight
+    (define (gen-weakly-correlated)
+      (let ( (weights-shifted (map (lambda (x) (+ WEAKLY_CORR_NBH x)) weights)) )
+        (list
+          weights-shifted
+          (map (lambda (x) (+ (- x WEAKLY_CORR_NBH) (random (* 2 (+ 1 WEAKLY_CORR_NBH))))) weights-shifted)
+          (+ W WEAKLY_CORR_NBH)
+        )
+      )
+    )
+
+    ; cost is linear fuction of weight + const
+    (define (gen-strongly-correlated)
+      (list
+        weights
+        (map (lambda (x) (+ (* k x) STRONG_CORRELATING_CONST) weights))
+        W
+      )
+    )
+
+    ; cost is linearly depends on weight
+    (define (gen-subset-sum)
+      (list
+        weights
+        (map (lambda (x) (* k x)) weights)
+        W
+      )
     )
 
     (let*
@@ -314,7 +357,7 @@
         (false-selector (random))
         (test
           (cond
-            ((< selector 1) (gen-uncorrelated))
+            ((< selector 1) (gen-weakly-correlated))
           )
         )
         (weights (list-ref test 0))
@@ -323,9 +366,14 @@
         (solution (simple-solve weights costs B))  
         (max-fit (list-ref solution 1))
       )
-      (if (<= false-selector FALSE_PROBABILITY)
-        (cons (append-el test (* max-fit 2)) (list #f))
-        (cons (append-el test (quotient max-fit 2)) (cons #t solution))
+      (cond
+        ;knapsack is too small for any item
+        ((= max-fit 0) (cons (append-el test 1) (list #f)))
+        (
+          (<= false-selector FALSE_PROBABILITY)
+          (cons (append-el test (* max-fit 2)) (list #f))
+        )
+        (else (cons (append-el test (quotient max-fit 2)) (cons #t solution)))
       )
     )
   )
@@ -372,6 +420,10 @@
   (reverse
     (cons el (reverse lst))
   )
+)
+
+(define (percent-int number p)
+  (inexact->exact (ceiling (* number (/ p 100.0))))
 )
 
 ;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
