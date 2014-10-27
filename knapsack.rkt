@@ -1,6 +1,6 @@
 #lang scheme/base
 
-; call from the interpreter:
+; call from the terminal:
 ; !racket %:p
 
 ; call example: (main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
@@ -34,13 +34,14 @@
 
 ; returns (sum_weight sum_cost chromosome)
 (define (knapsack weights costs B)
-  (let
+  (let*
     ( 
       (N (length weights))
-      (MUTATION_PROBABILITY (* 1.0 (/ 1 (length weights))))
+      (MUTATION_PROBABILITY (* 1.0 (/ 1 (* 2 (length weights)))))
+      ;(SIZE (min (factorial N) 1000))
       (SIZE 10)
       (CROSSOVER_PERCENT 0.7)
-      (GENS_NUMB_LIMIT 10)
+      (GENS_NUMB_LIMIT 10000)
       (TOURNAMENT_PARTICIPANTS 2)
       (MAX_STABILITY 25)
     )
@@ -205,10 +206,12 @@
         )
         ;(dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability)
         ;(if (> generation-numb GENS_NUMB_LIMIT) 
+        ;(if (or (= new-stability MAX_STABILITY) (> generation-numb GENS_NUMB_LIMIT))
         (if (= new-stability MAX_STABILITY) 
-          (cons 
-              (calc-weight-or-fit (car best-solution) weights)
-              (cons (cdr best-solution) (cons (car best-solution) '()))
+          (list
+            (calc-weight-or-fit (car best-solution) weights)
+            (cdr best-solution)
+            (car best-solution)
           )
           (let*
             (
@@ -216,7 +219,6 @@
               (new-generation (give-birth parents))
               (new-generation-mutated (map mutate new-generation))
             )
-            ;(cons solutions-fitnesses new-generation)
             (knapsack-cycle 
               new-generation-mutated 
               (+ generation-numb 1)
@@ -300,7 +302,7 @@
 (define (gen-test)
   (let*
     (
-      (FALSE_PROBABILITY 0.5)
+      (FALSE_PROBABILITY 0.1)
       (WEIGHT_MAX 2)
       ; for uncorrelated tests only
       (COST_MAX 4)
@@ -308,6 +310,7 @@
       (STRONG_CORRELATING_CONST 10)
       (WEAKLY_CORR_NBH (percent-int WEIGHT_MAX 10))
       (items-numb (+ 1 (random ITEMS_MAX)))
+      ;(items-numb 20)
       (W (+ 1 (random (* items-numb WEIGHT_MAX))))
       (weights (build-list items-numb (lambda (x) (+ 1 (random WEIGHT_MAX)))))
       (k (+ 1 (random 1)))
@@ -408,6 +411,7 @@
         (newline)
         (displayln "Testing is finished")
         (printf "Tests have passed: ~a\n" right-answers)
+        (printf "Tests have failed: ~a\n" (- total-answers right-answers))
         (printf "Total tests:  ~a\n" total-answers)
         (printf "Precision: ~a\n" (/ right-answers (* 1.0 total-answers)))
       )
@@ -526,8 +530,19 @@
     (displayln i))
 )
 
+(define (factorial n)
+  (define (factorial-cycle n res)
+    (if (= n 1)
+      res
+      (factorial-cycle (- n 1) (* n res))
+    )
+  )
+  (factorial-cycle n 1)
+)
+
 ;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
-;(newline)
-;(newline)
+;(main-genetic '(1 1 1 2) '(11 11 11 12) 3 20)
+;(main-genetic '(1 1 1 2 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) '(11 11 11 12 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) 200 20)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(start-testing 1 2)
+(start-testing 1000 1)
+;(factorial 30)
