@@ -38,14 +38,15 @@
     ( 
       (N (length weights))
       (MUTATION_PROBABILITY (* 1.0 (/ 1 (* 2 (length weights)))))
-      ;(SIZE (min (factorial N) 1000))
-      (SIZE 10)
+      (SIZE (min (expt 2 N) 1000))
+      ;(SIZE 6)
       (CROSSOVER_PERCENT 0.7)
-      (GENS_NUMB_LIMIT 10000)
+      (GENS_NUMB_LIMIT 4)
       (TOURNAMENT_PARTICIPANTS 2)
       (MAX_STABILITY 25)
+      (ELITISM (min (percent-int SIZE 12) 15))
     )
-    ; returns list of binary chromosomes
+    ; returns list of binary chromosomes size of SIZE + ELITISM
     (define (initialize-population)
       ; generate binary list of length N
       (define (gen-bin-list lst)
@@ -56,7 +57,7 @@
       )
 
       (define (gen-population lst)
-        (if (= SIZE (length lst))
+        (if (= (+ SIZE ELITISM) (length lst))
           lst
           (gen-population (cons (gen-bin-list '()) lst))
         )
@@ -179,7 +180,7 @@
       )
     )
 
-    (define (dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability)
+    (define (dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability elite)
       (printf "generation number: ~a\n" generation-numb)
       (printf "generation:\n") 
       (for ([i (in-list population)])
@@ -187,26 +188,37 @@
       (printf "solutions-fitnesses:\n") 
       (for ([i (in-list solutions-fitnesses)])
          (displayln i))     
+      (print-lst elite "elite:")
       (printf "best solution: ~a\n" best-solution)
       (printf "last-fitness: ~a\n" last-fitness)
       (printf "new fitness-stability: ~a\n" new-stability)
     )
 
     (define (knapsack-cycle population generation-numb last-fitness fitness-stability)
+      (define (sf-cmp sf1 sf2)
+        (> (cdr sf1) (cdr sf2))
+      )
+
       (let*
         ( 
-          (solutions-fitnesses (map solution-fitness population)) 
-          (best-solution (max solutions-fitnesses (lambda (x) (cdr x))))
+          (solutions-fitnesses-with-elitism (map solution-fitness population)) 
+          (solutions-fitnesses-sorted (sort solutions-fitnesses-with-elitism sf-cmp))
+          ; drop ELITISM excess elements from the end
+          (solutions-fitnesses (take solutions-fitnesses-sorted SIZE))
+          (best-solution (car solutions-fitnesses))
           (new-stability
             (if (= last-fitness (cdr best-solution))
               (+ 1 fitness-stability)
               0
             )   
           )
+          (elite (map (lambda (x) (car x)) (take solutions-fitnesses ELITISM)))
         )
-        ;(dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability)
-        ;(if (> generation-numb GENS_NUMB_LIMIT) 
+        ;(dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability elite)
         ;(if (or (= new-stability MAX_STABILITY) (> generation-numb GENS_NUMB_LIMIT))
+        ;(if (= new-stability MAX_STABILITY) 
+        ;(if (> generation-numb GENS_NUMB_LIMIT) 
+        ;TODO: check max generaton number
         (if (= new-stability MAX_STABILITY) 
           (list
             (calc-weight-or-fit (car best-solution) weights)
@@ -218,12 +230,13 @@
               (parents (choose-parents solutions-fitnesses))
               (new-generation (give-birth parents))
               (new-generation-mutated (map mutate new-generation))
+              (ng-mutated-with-elitism (append new-generation-mutated elite))
             )
             (knapsack-cycle 
-              new-generation-mutated 
+              ng-mutated-with-elitism 
               (+ generation-numb 1)
               (cdr best-solution)
-              new-stability  
+              new-stability
             )
           )
         )
@@ -303,10 +316,10 @@
   (let*
     (
       (FALSE_PROBABILITY 0.1)
-      (WEIGHT_MAX 2)
+      (WEIGHT_MAX 100)
       ; for uncorrelated tests only
-      (COST_MAX 4)
-      (ITEMS_MAX 4)
+      (COST_MAX 100)
+      (ITEMS_MAX 15)
       (STRONG_CORRELATING_CONST 10)
       (WEAKLY_CORR_NBH (percent-int WEIGHT_MAX 10))
       (items-numb (+ 1 (random ITEMS_MAX)))
@@ -472,6 +485,7 @@
   (map cons lst1 lst2)
 )
 
+;takes pos elements from lst
 (define (take lst pos)
   (define (take-cycle lst res n)
     (if (= n pos)
@@ -530,19 +544,13 @@
     (displayln i))
 )
 
-(define (factorial n)
-  (define (factorial-cycle n res)
-    (if (= n 1)
-      res
-      (factorial-cycle (- n 1) (* n res))
-    )
-  )
-  (factorial-cycle n 1)
-)
 
 ;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
 ;(main-genetic '(1 1 1 2) '(11 11 11 12) 3 20)
 ;(main-genetic '(1 1 1 2 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) '(11 11 11 12 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) 200 20)
+;(let ( (v '(1 1 1 2 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 55 23 25)) )  
+  ;(printf "n: ~a\n" (length v))
+  ;(main-dummy v v 200 20)
+;)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(start-testing 1000 1)
-;(factorial 30)
+(start-testing 100 2)
