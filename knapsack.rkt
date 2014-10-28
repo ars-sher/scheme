@@ -52,7 +52,7 @@
       (define (gen-bin-list lst)
         (if (= N (length lst))
           lst
-          (gen-bin-list (cons (random 2) lst))
+          (gen-bin-list (cons (= 1 (random 2)) lst))
         )
       )
 
@@ -70,7 +70,7 @@
       (let ( (chromosomes-weights (zip chromosome x)) )
         (foldl 
           (lambda (x old)
-            (if (= 1 (car x))
+            (if (equal? #t (car x))
               (+ old (cdr x))
               old
             )
@@ -91,7 +91,7 @@
             (head (take chromosome pos))
             (tail (list-tail chromosome pos))
           )
-          (append head (cons 0 (cdr tail)))
+          (append head (cons #f (cdr tail)))
         )
       )
 
@@ -172,7 +172,7 @@
       (map
         (lambda (x)
           (if (< (random) MUTATION_PROBABILITY)
-            (modulo (+ x 1) 2)
+            (not x)
             x
           )
         )
@@ -315,7 +315,7 @@
 (define (gen-test)
   (let*
     (
-      (FALSE_PROBABILITY 0.1)
+      (FALSE_PROBABILITY 0.5)
       (WEIGHT_MAX 100)
       ; for uncorrelated tests only
       (COST_MAX 100)
@@ -478,6 +478,15 @@
   )
 
   (testing-cycle 0 0)
+)
+
+(define (binary-string-to-indexes bs)
+  (map
+    (lambda (x)
+	  x
+	)
+    bs
+  ) 
 )
 
 ;support functions
