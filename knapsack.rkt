@@ -376,32 +376,114 @@
       )
     )
 
-    (let*
-      (
-        (selector (random))
-        (false-selector (random))
-        (test
-          (cond
-            ((< selector 0.25) (gen-uncorrelated))
-            ((< selector 0.5) (gen-weakly-correlated))
-            ((< selector 0.75) (gen-strongly-correlated))
-            (else  (gen-subset-sum))
+    ; generates big test
+    (define (gen-big)
+      ; answer part
+      (define (gen-big-answer answer-size min-cost)
+        (cons
+          (build-list answer-size (lambda (x) (+ 1 (random WEIGHT_MAX))))
+          (build-list answer-size (lambda (x) (+ (+ 2 min-cost) (random COST_MAX))))
+        )
+      )
+      
+      ; useless part
+      (define (gen-useless size min-cost max-weight)
+        (cons
+          (build-list size (lambda (x) (+ (+ 1 max-weight) (random WEIGHT_MAX))))
+          (build-list size (lambda (x) (+ 1 (random min-cost))))
+        )
+      )
+
+      (let*
+        (
+          (answer-size 10)
+          (useless-size 30)
+          (min-cost 15)
+          (answer-wc (gen-big-answer answer-size min-cost))
+          (answer-weights (car answer-wc))
+          (answer-costs (cdr answer-wc))
+          (max-weight (max answer-weights (lambda (x) x)))
+          (B (lst-sum answer-weights))
+          (ready-answer
+            (list
+              B
+              (lst-sum answer-costs)
+              (build-list (length answer-weights) (lambda (x) (+ x 1)))
+            )
+          )
+          (useless-wc (gen-useless useless-size min-cost max-weight))
+          (useless-weights (car useless-wc))
+          (useless-costs (cdr useless-wc))
+          (weights (append answer-weights useless-weights))
+          (costs (append answer-costs useless-costs))
+          (task
+            (list
+              weights
+              costs
+              B
+            )
           )
         )
-        (weights (list-ref test 1))
-        (costs (list-ref test 2))
-        (B (list-ref test 3))
-        (solution (simple-solve weights costs B))  
-        (max-fit (list-ref solution 1))
+        (cons task ready-answer)
       )
-      (cond
-        ;knapsack is too small for any item
-        ((= max-fit 0) (cons (append-el test 1) (list #f)))
+    )
+
+    ; choose, big test or not
+    (if (> (random) 0.5)
+      (let*
         (
-          (<= false-selector FALSE_PROBABILITY)
-          (cons (append-el test (* max-fit 2)) (list #f))
+          (selector (random))
+          (false-selector (random))
+          (test
+            (cond
+              ((< selector 0.25) (gen-uncorrelated))
+              ((< selector 0.5) (gen-weakly-correlated))
+              ((< selector 0.75) (gen-strongly-correlated))
+              (else  (gen-subset-sum))
+            )
+          )
+          (weights (list-ref test 1))
+          (costs (list-ref test 2))
+          (B (list-ref test 3))
+          (solution (simple-solve weights costs B))  
+          (max-fit (list-ref solution 1))
         )
-        (else (cons (append-el test (quotient max-fit 2)) (cons #t solution)))
+        (cond
+          ;knapsack is too small for any item
+          ((= max-fit 0) (cons (append-el test 1) (list #f)))
+          (
+            (<= false-selector FALSE_PROBABILITY)
+            (cons (append-el test (* max-fit 2)) (list #f))
+          )
+          (else (cons (append-el test (quotient max-fit 2)) (cons #t solution)))
+        )
+      )
+      ; generate big test
+      (let*
+        (
+          (gbt (gen-big))
+          (test-with-answer
+            (cons
+              (cons "big test" (car gbt))
+              (cdr gbt)
+            )
+          )
+          (task (car test-with-answer))
+          (solution (cdr test-with-answer))
+          (max-fit (list-ref solution 1))
+          (false-selector (random))
+
+        )
+        (cond
+          ;knapsack is too small for any item
+          ((= max-fit 0) (cons (append-el task 1) (list #f)))
+          (
+            (<= false-selector FALSE_PROBABILITY)
+            (cons (append-el task (* max-fit 2)) (list #f))
+          )
+          (else (cons (append-el task (quotient max-fit 2)) (cons #t solution)))
+        )
+        ;'(("hhhh" (1 1) (1 1) 10 1) #t 2 2 (1))
       )
     )
   )
@@ -600,6 +682,10 @@
     (displayln i))
 )
 
+(define (lst-sum lst)
+  (foldl + 0 lst)
+)
+
 
 ;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
 ;(main-genetic '(1 1 1 2) '(11 11 11 12) 3 20)
@@ -609,5 +695,4 @@
   ;(main-dummy v v 200 20)
 ;)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(start-testing 100 2)
-
+(start-testing 15 2)
