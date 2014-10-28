@@ -483,7 +483,6 @@
           )
           (else (cons (append-el task (quotient max-fit 2)) (cons #t solution)))
         )
-        ;'(("hhhh" (1 1) (1 1) 10 1) #t 2 2 (1))
       )
     )
   )
@@ -695,4 +694,4 @@
   ;(main-dummy v v 200 20)
 ;)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(start-testing 15 2)
+(start-testing 15 -1)
