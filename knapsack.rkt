@@ -38,7 +38,7 @@
     ( 
       (N (length weights))
       (MUTATION_PROBABILITY (* 1.0 (/ 1 (* 2 (length weights)))))
-      (SIZE (min (expt 2 N) 1000))
+      (SIZE (min (expt 2 N) 500))
       ;(SIZE 6)
       (CROSSOVER_PERCENT 0.7)
       (GENS_NUMB_LIMIT 4)
@@ -223,7 +223,7 @@
           (list
             (calc-weight-or-fit (car best-solution) weights)
             (cdr best-solution)
-            (car best-solution)
+            (binary-string-to-indexes (car best-solution))
           )
           (let*
             (
@@ -273,10 +273,10 @@
 
   ;format answer
   (define (return vect fit)
-    (cons (calc-weight vect)
-      (cons fit
-        (cons vect '())
-      )
+    (list
+      (calc-weight vect)
+      fit
+      (binary-string-to-indexes vect)
     )
   )
 
@@ -324,7 +324,12 @@
       (WEAKLY_CORR_NBH (percent-int WEIGHT_MAX 10))
       (items-numb (+ 1 (random ITEMS_MAX)))
       ;(items-numb 20)
-      (W (+ 1 (random (* items-numb WEIGHT_MAX))))
+      (W
+	    (quotient
+	      (+ 1 (random (* items-numb WEIGHT_MAX)))
+		  (+ 1 (random 2))
+		)
+	  )
       (weights (build-list items-numb (lambda (x) (+ 1 (random WEIGHT_MAX)))))
       (k (+ 1 (random 1)))
     )
@@ -480,16 +485,24 @@
   (testing-cycle 0 0)
 )
 
+;support functions
+
+;maps bibary string to indexes, starting from 1
 (define (binary-string-to-indexes bs)
-  (map
-    (lambda (x)
-	  x
-	)
-    bs
-  ) 
+  (filter
+    (lambda (x) (not (= x -1)))
+    (map
+      (lambda (x)
+        (if (car x)
+          (cdr x)
+          -1
+        )
+      )
+      (zip bs (build-list (length bs) (lambda (x) (+ 1 x))))
+    )
+  )
 )
 
-;support functions
 (define (zip lst1 lst2)
   (map cons lst1 lst2)
 )
@@ -563,3 +576,4 @@
 ;)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
 (start-testing 100 2)
+
