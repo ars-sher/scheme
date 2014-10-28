@@ -407,6 +407,11 @@
   )
 )
 
+;dbg level:
+;-1 - print only tests
+;0 - only results of testing
+;1 - 0 + failed tests
+;2 - all tests, all answers, result
 (define (start-testing n [debug-level 0])
   ; prints test info, if debug-level requires it
   (define (print-test success? test-type test-task test-answer given-answer)
@@ -422,7 +427,8 @@
     )
     (displayln "_________________________________")
   )
-
+  
+  ; just prints the test
   (define (print-only-test test-type test-task test-answer)
     (display "test type: ")
     (displayln test-type) 
@@ -434,6 +440,7 @@
 
   (define (testing-cycle total-answers right-answers)
     (if (= debug-level -1)
+      ;just print tests
       (if (= total-answers n)
         (printf "Printing ~a tests done\n" total-answers)
         (let*
@@ -449,6 +456,7 @@
           )
         )
       )
+      ;real testing
       (if (= total-answers n)
           (begin
             (newline)
@@ -601,5 +609,5 @@
   ;(main-dummy v v 200 20)
 ;)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(start-testing 100 -1)
+(start-testing 100 2)
 
