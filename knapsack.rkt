@@ -488,19 +488,15 @@
   )
 )
 
-;dbg level:
-;-1 - print only tests
-;0 - only results of testing
-;1 - 0 + failed tests
-;2 - all tests, all answers, result
+;debug-level:
+;-1 - print only tests (task and right answer)
+;0 - only total results of testing
+;1 - 0 + failed tests full info
+;2 - all tests, all answers, total result
 (define (start-testing n [debug-level 0])
   ; prints test info, if debug-level requires it
   (define (print-test success? test-type test-task test-answer given-answer)
-    (display "test type: ")
-    (displayln test-type) 
-    (print-lst test-task "task:")
-    (newline)
-    (print-lst test-answer "right answer:")
+    (print-only-test test-type test-task test-answer)
     (print-lst given-answer "given answer:")
     (if success?
       (displayln "Test has passed")
@@ -509,95 +505,102 @@
     (displayln "_________________________________")
   )
   
-  ; just prints the test
-  (define (print-only-test test-type test-task test-answer)
-    (display "test type: ")
-    (displayln test-type) 
-    (print-lst test-task "task:")
-    (newline)
-    (print-lst test-answer "right answer:")
-    (displayln "_________________________________")
-  )
-
   (define (testing-cycle total-answers right-answers)
-    (if (= debug-level -1)
-      ;just print tests
-      (if (= total-answers n)
-        (printf "Printing ~a tests done\n" total-answers)
-        (let*
+    (if (= total-answers n)
+      (begin
+        (newline)
+        (displayln "Testing is finished")
+        (printf "Tests have passed: ~a\n" right-answers)
+        (printf "Tests have failed: ~a\n" (- total-answers right-answers))
+        (printf "Total tests:  ~a\n" total-answers)
+        (printf "Precision: ~a\n" (/ right-answers (* 1.0 total-answers)))
+      )
+      (let*
+        (
+          (test (gen-test))
+          (test-type (caar test))
+          (test-task (cdar test))
+          (test-answer (cdr test))
+          (weights (list-ref test-task 0))
+          (costs (list-ref test-task 1))
+          (B (list-ref test-task 2))
+          (K (list-ref test-task 3))
+          (given-answer (main-genetic weights costs B K))
+          (t-or-f-right (car test-answer))
+          (t-or-f-given (car given-answer))
+        )
+
+        ; compare right and given answers
+        (cond
           (
-            (test (gen-test))
-            (test-type (caar test))
-            (test-task (cdar test))
-            (test-answer (cdr test))
+            (and (equal? #f t-or-f-right) (equal? #f t-or-f-given))
+            (begin
+              (when (>= debug-level 2) (print-test #t test-type test-task test-answer given-answer))
+              (testing-cycle (+ 1 total-answers) (+ 1 right-answers))
+            )
           )
-          (begin
-            (print-only-test test-type test-task test-answer)
-            (testing-cycle (+ 1 total-answers) 0)
+          (
+            ; certainly wrong answer
+            (xor t-or-f-right t-or-f-given)
+            (begin
+              (when (>= debug-level 1) (print-test #f test-type test-task test-answer given-answer))
+              (testing-cycle (+ 1 total-answers) right-answers)
+            )
+          )
+          (else
+            (if (= (list-ref test-answer 2) (list-ref given-answer 2))
+              (begin
+                (when (>= debug-level 2) (print-test #t test-type test-task test-answer given-answer))
+                (testing-cycle (+ 1 total-answers) (+ 1 right-answers))
+              )
+              (begin
+                (when (>= debug-level 1) (print-test #f test-type test-task test-answer given-answer))
+                (testing-cycle (+ 1 total-answers) right-answers)
+              )
+            )
           )
         )
       )
-      ;real testing
-      (if (= total-answers n)
-          (begin
-            (newline)
-            (displayln "Testing is finished")
-            (printf "Tests have passed: ~a\n" right-answers)
-            (printf "Tests have failed: ~a\n" (- total-answers right-answers))
-            (printf "Total tests:  ~a\n" total-answers)
-            (printf "Precision: ~a\n" (/ right-answers (* 1.0 total-answers)))
-          )
-          (let*
-            (
-              (test (gen-test))
-              (test-type (caar test))
-              (test-task (cdar test))
-              (test-answer (cdr test))
-              (weights (list-ref test-task 0))
-              (costs (list-ref test-task 1))
-              (B (list-ref test-task 2))
-              (K (list-ref test-task 3))
-              (given-answer (main-genetic weights costs B K))
-              (t-or-f-right (car test-answer))
-              (t-or-f-given (car given-answer))
-            )
-
-            ; compare right and given answers
-            (cond
-              (
-                (and (equal? #f t-or-f-right) (equal? #f t-or-f-given))
-                (begin
-                  (when (>= debug-level 2) (print-test #t test-type test-task test-answer given-answer))
-                  (testing-cycle (+ 1 total-answers) (+ 1 right-answers))
-                )
-              )
-              (
-                ; certainly wrong answer
-                (xor t-or-f-right t-or-f-given)
-                (begin
-                  (when (>= debug-level 1) (print-test #f test-type test-task test-answer given-answer))
-                  (testing-cycle (+ 1 total-answers) right-answers)
-                )
-              )
-              (else
-                (if (= (list-ref test-answer 2) (list-ref given-answer 2))
-                  (begin
-                    (when (>= debug-level 2) (print-test #t test-type test-task test-answer given-answer))
-                    (testing-cycle (+ 1 total-answers) (+ 1 right-answers))
-                  )
-                  (begin
-                    (when (>= debug-level 1) (print-test #f test-type test-task test-answer given-answer))
-                    (testing-cycle (+ 1 total-answers) right-answers)
-                  )
-                )
-              )
-            )
-          )
-        )
-    ) 
+    )
   )
 
-  (testing-cycle 0 0)
+  (if (= debug-level -1)
+    (print-tests n) 
+    (testing-cycle 0 0)
+  )
+)
+
+; just prints the test (task and right answer)
+(define (print-only-test test-type test-task test-answer)
+  (display "test type: ")
+  (displayln test-type) 
+  (print-lst test-task "task:")
+  (newline)
+  (print-lst test-answer "right answer:")
+)
+
+; print n tests
+(define (print-tests n)
+  (define (print-tests-cycle i)
+    (if (= i n)
+      (printf "Printing ~a tests done\n" i)
+      (let*
+        (
+          (test (gen-test))
+          (test-type (caar test))
+          (test-task (cdar test))
+          (test-answer (cdr test))
+        )
+        (begin
+          (print-only-test test-type test-task test-answer)
+          (displayln "_________________________________")
+          (print-tests-cycle (+ 1 i))
+        )
+      )
+    )
+  )
+
+  (print-tests-cycle 0)
 )
 
 ;support functions
@@ -694,4 +697,5 @@
   ;(main-dummy v v 200 20)
 ;)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
-(start-testing 15 -1)
+(start-testing 15 2)
+;(print-tests 10)
