@@ -433,37 +433,20 @@
       )
     )
 
-    ; choose, big test or not
-    (if (> (random) 0.5)
+    ; generates (test . solution) pair, getting solution with simple-solve
+    (define (test-solution-ss test)
       (let*
         (
-          (selector (random))
-          (false-selector (random))
-          (test
-            (cond
-              ((< selector 0.25) (gen-uncorrelated))
-              ((< selector 0.5) (gen-weakly-correlated))
-              ((< selector 0.75) (gen-strongly-correlated))
-              (else  (gen-subset-sum))
-            )
-          )
           (weights (list-ref test 1))
           (costs (list-ref test 2))
           (B (list-ref test 3))
           (solution (simple-solve weights costs B))  
-          (max-fit (list-ref solution 1))
         )
-        (cond
-          ;knapsack is too small for any item
-          ((= max-fit 0) (cons (append-el test 1) (list #f)))
-          (
-            (<= false-selector FALSE_PROBABILITY)
-            (cons (append-el test (* max-fit 2)) (list #f))
-          )
-          (else (cons (append-el test (quotient max-fit 2)) (cons #t solution)))
-        )
-      )
-      ; generate big test
+        (cons test solution)
+      )  
+    )
+
+    (define (test-solution-big)
       (let*
         (
           (gbt (gen-big))
@@ -475,19 +458,37 @@
           )
           (task (car test-with-answer))
           (solution (cdr test-with-answer))
-          (max-fit (list-ref solution 1))
-          (false-selector (random))
+        )
+        (cons task solution)
+      )
+    )
 
-        )
-        (cond
-          ;knapsack is too small for any item
-          ((= max-fit 0) (cons (append-el task 1) (list #f)))
-          (
-            (<= false-selector FALSE_PROBABILITY)
-            (cons (append-el task (* max-fit 2)) (list #f))
+    (let*
+      (
+        (selector (random))
+        (false-selector (random))
+        ; (test . solution) pair
+        (test-solution
+          (cond
+            ((< selector 0.1) (test-solution-ss (gen-uncorrelated)))
+            ((< selector 0.1) (test-solution-ss (gen-weakly-correlated)))
+            ((< selector 0.1) (test-solution-ss (gen-strongly-correlated)))
+            ((< selector 0.1) (test-solution-ss (gen-subset-sum)))
+            (else  (test-solution-big))
           )
-          (else (cons (append-el task (quotient max-fit 2)) (cons #t solution)))
         )
+        (test (car test-solution))
+        (solution (cdr test-solution))
+        (max-fit (list-ref solution 1))
+      )
+      (cond
+        ;knapsack is too small for any item
+        ((= max-fit 0) (cons (append-el test 1) (list #f)))
+        (
+          (<= false-selector FALSE_PROBABILITY)
+          (cons (append-el test (* max-fit 2)) (list #f))
+        )
+        (else (cons (append-el test (quotient max-fit 2)) (cons #t solution)))
       )
     )
   )
@@ -694,12 +695,12 @@
 )
 
 
-(main-genetic
-  '(36 37 5 85 99 84 83 19 13 55 92 99 71 44 85)
-  '(46 47 15 95 109 94 93 29 23 65 102 109 81 54 95)
-  670
-  395
-)
+;(main-genetic
+;  '(36 37 5 85 99 84 83 19 13 55 92 99 71 44 85)
+;  '(46 47 15 95 109 94 93 29 23 65 102 109 81 54 95)
+;  670
+;  395
+;)
 #|(main-dummy|#
   ;'(36 37 5 85 99 84 83 19 13 55 92 99 71 44 85)
   ;'(46 47 15 95 109 94 93 29 23 65 102 109 81 54 95)
@@ -715,5 +716,5 @@
   ;(printf "n: ~a\n" (length v))
   ;(main-dummy v v 200 20)
 ;)
-;(start-testing 15 2)
+(start-testing 15 2)
 ;(print-tests 15)
