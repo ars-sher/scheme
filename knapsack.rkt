@@ -36,6 +36,7 @@
 (define (knapsack weights costs B)
   (let*
     ( 
+      ; SIZE - ELITISM must be even
       (N (length weights))
       (MUTATION_PROBABILITY (* 1.0 (/ 1 (* 2 (length weights)))))
       (SIZE
@@ -49,7 +50,7 @@
       (GENS_NUMB_LIMIT 4)
       (TOURNAMENT_PARTICIPANTS 2)
       (MAX_STABILITY 25)
-      (ELITISM (min (percent-int SIZE 12) 15))
+      (ELITISM (min (even (percent-int SIZE 12)) 16))
     )
     ; returns list of binary chromosomes size of SIZE + ELITISM
     (define (initialize-population)
@@ -106,10 +107,10 @@
       )
     )
 
-    ; chooses SIZE parents
-    (define (choose-parents solutions-fitnesses)
+    ; chooses parents-size parents
+    (define (choose-parents parents-size solutions-fitnesses)
       (define (choose-parents-cycle res res-size)
-        (if (= res-size SIZE)
+        (if (= res-size parents-size)
           res
           (choose-parents-cycle (cons (run-tournament) res) (+ res-size 1))
         )
@@ -160,7 +161,7 @@
         (unite-loop lst '())
       )
 
-      (let ( (pos (quotient SIZE 2)) )
+      (let ( (pos (quotient (length parents) 2)) )
         (let
           (
             (parents1 (take parents pos))
@@ -200,38 +201,37 @@
     )
 
     (define (knapsack-cycle population generation-numb last-fitness fitness-stability)
-      (define (sf-cmp sf1 sf2)
-        (> (cdr sf1) (cdr sf2))
+      (define (sf-cmp< sf1 sf2)
+        (< (cdr sf1) (cdr sf2))
       )
 
       (let*
         ( 
-          (solutions-fitnesses-with-elitism (map solution-fitness population)) 
-          (solutions-fitnesses-sorted (sort solutions-fitnesses-with-elitism sf-cmp))
-          ; drop ELITISM excess elements from the end
-          (solutions-fitnesses (take solutions-fitnesses-sorted SIZE))
-          (best-solution (car solutions-fitnesses))
+          (solutions-fitnesses (map solution-fitness population)) 
+          (sf-elite (max-els solutions-fitnesses  sf-cmp< ELITISM))
+          (best-sf (car sf-elite))
           (new-stability
-            (if (= last-fitness (cdr best-solution))
+            (if (= last-fitness (cdr best-sf))
               (+ 1 fitness-stability)
               0
             )   
           )
-          (elite (map (lambda (x) (car x)) (take solutions-fitnesses ELITISM)))
+          (elite (map (lambda (x) (car x)) sf-elite))
         )
+
         ;(dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability elite)
         ;(if (or (= new-stability MAX_STABILITY) (> generation-numb GENS_NUMB_LIMIT))
         ;(if (= new-stability MAX_STABILITY) 
         ;(if (> generation-numb GENS_NUMB_LIMIT) 
         (if (= new-stability MAX_STABILITY) 
           (list
-            (calc-weight-or-fit (car best-solution) weights)
-            (cdr best-solution)
-            (binary-string-to-indexes (car best-solution))
+            (calc-weight-or-fit (car best-sf) weights)
+            (cdr best-sf)
+            (binary-string-to-indexes (car best-sf))
           )
           (let*
             (
-              (parents (choose-parents solutions-fitnesses))
+              (parents (choose-parents (- SIZE ELITISM) solutions-fitnesses))
               (new-generation (give-birth parents))
               (new-generation-mutated (map mutate new-generation))
               (ng-mutated-with-elitism (append new-generation-mutated elite))
@@ -239,7 +239,7 @@
             (knapsack-cycle 
               ng-mutated-with-elitism 
               (+ generation-numb 1)
-              (cdr best-solution)
+              (cdr best-sf)
               new-stability
             )
           )
@@ -696,7 +696,7 @@
 
 ; f ~ <
 ; returns list of n max elements in lst, sorted in >
-(define (max-els--lst-filtered lst f n)
+(define (max-els lst f n)
   ; returns lst of n max elements in lst
   (define (max-els-cycle lst res)
     ; inserts el into < sorted list lst
@@ -726,7 +726,13 @@
   (max-els-cycle lst '())
 )
 
-(max-els--lst-filtered '(2 4 1 3 4) < 3)
+(define (even n)
+  (if (= 0 (modulo n 2))
+    n
+    (+ n 1)
+  )
+)
+
 ;(main-genetic
 ;  '(36 37 5 85 99 84 83 19 13 55 92 99 71 44 85)
 ;  '(46 47 15 95 109 94 93 29 23 65 102 109 81 54 95)
@@ -748,5 +754,5 @@
   ;(printf "n: ~a\n" (length v))
   ;(main-dummy v v 200 20)
 ;)
-;(start-testing 1 2)
+(start-testing 1 2)
 ;(print-tests 15)
