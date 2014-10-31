@@ -695,9 +695,7 @@
 )
 
 ; f ~ <
-; returns pair (max-els . lst-filtered),
-; where max-els is list of n max elements in lst, sorted in <
-; and lst-filtered is lst without max-els
+; returns list of n max elements in lst, sorted in >
 (define (max-els--lst-filtered lst f n)
   ; returns lst of n max elements in lst
   (define (max-els-cycle lst res)
@@ -720,17 +718,12 @@
     )
 
     (if (null? lst)
-      res
+      (reverse res)
       (max-els-cycle (cdr lst) (insert (car lst) res))
     )
   )
 
-  (let*
-    (
-      (max-els (max-els-cycle lst '()))
-    )
-    max-els
-  )  
+  (max-els-cycle lst '())
 )
 
 (max-els--lst-filtered '(2 4 1 3 4) < 3)
