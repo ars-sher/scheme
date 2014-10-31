@@ -223,7 +223,6 @@
         ;(if (or (= new-stability MAX_STABILITY) (> generation-numb GENS_NUMB_LIMIT))
         ;(if (= new-stability MAX_STABILITY) 
         ;(if (> generation-numb GENS_NUMB_LIMIT) 
-        ;TODO: check max generaton number
         (if (= new-stability MAX_STABILITY) 
           (list
             (calc-weight-or-fit (car best-solution) weights)
@@ -681,6 +680,7 @@
   )
 )
 
+; print list with title
 (define (print-lst lst [title '()])
   (if (string? title)
     (displayln title)
@@ -694,7 +694,46 @@
   (foldl + 0 lst)
 )
 
+; f ~ <
+; returns pair (max-els . lst-filtered),
+; where max-els is list of n max elements in lst, sorted in <
+; and lst-filtered is lst without max-els
+(define (max-els--lst-filtered lst f n)
+  ; returns lst of n max elements in lst
+  (define (max-els-cycle lst res)
+    ; inserts el into < sorted list lst
+    (define (insert el lst)
+      (define (insert-cycle lst res)
+        (cond
+          ((null? lst) (reverse (cons el res)))
+          ((f (car lst) el) (insert-cycle (cdr lst) (cons (car lst) res)))
+          (else (append (reverse res) (cons el lst)))
+        )
+      )
 
+      (let ( (inserted (insert-cycle lst '())) )
+        (if (> (length inserted) n)
+          (cdr inserted)
+          inserted
+        )
+      )
+    )
+
+    (if (null? lst)
+      res
+      (max-els-cycle (cdr lst) (insert (car lst) res))
+    )
+  )
+
+  (let*
+    (
+      (max-els (max-els-cycle lst '()))
+    )
+    max-els
+  )  
+)
+
+(max-els--lst-filtered '(2 4 1 3 4) < 3)
 ;(main-genetic
 ;  '(36 37 5 85 99 84 83 19 13 55 92 99 71 44 85)
 ;  '(46 47 15 95 109 94 93 29 23 65 102 109 81 54 95)
@@ -716,5 +755,5 @@
   ;(printf "n: ~a\n" (length v))
   ;(main-dummy v v 200 20)
 ;)
-(start-testing 15 2)
+;(start-testing 1 2)
 ;(print-tests 15)
