@@ -13,6 +13,7 @@
   (main simple-solve weights costs B K)
 )
 
+; solves the task with given function
 (define (main f weights costs B K)
   (let ( (result (f weights costs B)) )
     (if (>= (list-ref result 1) K)
@@ -36,7 +37,7 @@
 (define (knapsack weights costs B)
   (let*
     ( 
-      ; SIZE - ELITISM must be even
+      ; (- SIZE ELITISM) must be even
       (N (length weights))
       (MUTATION_PROBABILITY (* 1.0 (/ 1 (* 2 (length weights)))))
       (SIZE
@@ -63,7 +64,7 @@
       )
 
       (define (gen-population lst)
-        (if (= (+ SIZE ELITISM) (length lst))
+        (if (= SIZE (length lst))
           lst
           (gen-population (cons (gen-bin-list '()) lst))
         )
@@ -71,7 +72,7 @@
       (gen-population '())
     )
 
-    ; calculates weight of fitness of chromosome
+    ; calculates weight or fitness of chromosome
     (define (calc-weight-or-fit chromosome x)
       (let ( (chromosomes-weights (zip chromosome x)) )
         (foldl 
@@ -208,7 +209,7 @@
       (let*
         ( 
           (solutions-fitnesses (map solution-fitness population)) 
-          (sf-elite (max-els solutions-fitnesses  sf-cmp< ELITISM))
+          (sf-elite (max-els solutions-fitnesses sf-cmp< ELITISM))
           (best-sf (car sf-elite))
           (new-stability
             (if (= last-fitness (cdr best-sf))
@@ -469,10 +470,10 @@
         ; (test . solution) pair
         (test-solution
           (cond
-            ((< selector 0.1) (test-solution-ss (gen-uncorrelated)))
-            ((< selector 0.1) (test-solution-ss (gen-weakly-correlated)))
-            ((< selector 0.1) (test-solution-ss (gen-strongly-correlated)))
-            ((< selector 0.1) (test-solution-ss (gen-subset-sum)))
+            ((< selector 0.2) (test-solution-ss (gen-uncorrelated)))
+            ((< selector 0.4) (test-solution-ss (gen-weakly-correlated)))
+            ((< selector 0.8) (test-solution-ss (gen-strongly-correlated)))
+            ((< selector 1) (test-solution-ss (gen-subset-sum)))
             (else  (test-solution-big))
           )
         )
@@ -754,5 +755,5 @@
   ;(printf "n: ~a\n" (length v))
   ;(main-dummy v v 200 20)
 ;)
-(start-testing 1 2)
+(start-testing 20 2)
 ;(print-tests 15)
