@@ -1,5 +1,8 @@
 #lang scheme/base
 
+; call from the terminal:
+; !racket %:p
+
 (require racket/class)
 (require racket/draw)
 (require racket/gui)
@@ -7,10 +10,36 @@
  
 (define no-pen (new pen% [style 'transparent]))
 (define no-brush (new brush% [style 'transparent]))
-(define blue-brush (new brush% [color "blue"] [stipple (read-bitmap "water.png")]))
+; (define blue-brush (new brush% [stipple (read-bitmap "water.png")]))
+(define blue-brush (new brush% [color "blue"]))
 (define yellow-brush (new brush% [color "yellow"]))
-(define red-pen (new pen% [color "red"] [width 2]))
+(define red-pen (new pen% [color "brown"] [width 2]))
  
+(define (draw-result dc knapsack-width knapsack-height items-lst max-weight)
+  (define knapsack-path
+    (let ([p (new dc-path%)])
+      ; (send p append left-lambda-path)
+      (send p move-to 0 0)
+      (send p line-to 0 knapsack-height)
+      (send p line-to knapsack-width knapsack-height)
+      (send p line-to knapsack-width 0)
+      (send p move-to 0 0)
+      p
+    )
+  )
+
+  (send dc set-pen "red" 1 'solid)
+  (send dc set-brush "white" 'transparent)
+  (send dc draw-path knapsack-path)
+
+  (send dc translate 0 knapsack-height)
+
+  (send dc set-brush "blue" 'solid)
+  (send dc draw-rectangle 0 0 knapsack-width 30)
+
+  (send dc translate 0 (- knapsack-height))
+)
+
 (define (draw-face dc)
   (send dc set-smoothing 'aligned)
  
@@ -33,7 +62,7 @@
       (send p move-to 153 44)
       (send p line-to 161.5 60)
       (send p curve-to 202.5 49 230 42 245 61)
-      (send p curve-to 280.06 105.41 287.5 141 296.5 186)
+      (send p curve-to 280.06 105.41 287.5 141 296.5 186)       
       (send p curve-to 301.12 209.08 299.11 223.38 293.96 244)
       (send p curve-to 281.34 294.54 259.18 331.61 233.5 375)
       (send p curve-to 198.21 434.63 164.68 505.6 125.5 564)
@@ -101,35 +130,65 @@
       (let ([t (new dc-path%)])
           (send t append right-lambda-path)
           (send t reverse)
-          (send p append t))
+          (send p append t)
+      )
       (send p close)
       p
     )
   )
   
-  ;(send dc set-pen "black" 0 'transparent)
+  (send dc set-pen "black" 0 'transparent)
   (send dc set-brush "white" 'solid)
   (send dc draw-path lambda-path)
  
   (send dc set-pen "black" 4 'solid)
- 
   (send dc set-brush yellow-brush)
-  ;(send dc draw-path left-logo-path)
+  (send dc draw-path left-logo-path)
+
   ;(send dc draw-path bottom-logo-path)
  
   (send dc set-brush blue-brush)
   ;(send dc draw-path right-logo-path)
 )
 
+(define (quot-int number q)
+  (inexact->exact (ceiling (* number q)))
+)
+
 (let*
   (
-    (target (make-bitmap 170 170))
+    (width 695)
+    (heigth 637)
+    (width-center (/ width 2))
+    (heigth-center (/ heigth 2))
+
+    (target (make-bitmap width heigth))
+    (usls (send target load-file "knapsack.jpg"))
+    ; (target (read-bitmap "shema.jpg"))
     (dc (new bitmap-dc% [bitmap target]))
+
+    ; (knapsack-width (quot-int width 0.4))
+    ; (knapsack-height (quot-int heigth 0.5))
+    (knapsack-width 120)
+    (knapsack-height 310)
+    (knapsack-x 445)
+    (knapsack-y 175)
+    (max-weight 15)
+    (items-lst '((2 10) (4 15) (5 70)))
+
+    (usls (send dc translate knapsack-x knapsack-y))
+    (usls (draw-result dc knapsack-width knapsack-height items-lst max-weight))
+    (usls (send dc translate (- knapsack-x) (- knapsack-y)))
+
     (usls (send dc set-smoothing 'smoothed))
-    (usls (send dc translate 5 5))
-    (usls (send dc scale 0.25 0.25))
+    (usls (send dc translate 440 620))
+    (usls (draw-face dc))
+
+    (usls (send dc scale 0.5 0.5))
+    (usls (send dc translate 1200 50))
     (usls (draw-racket-logo dc))
   )
+    (print (* 1.0 knapsack-y))
     (send target save-file "box.png" 'png)
-    (make-object image-snip% target)
+    ;(make-object image-snip% target)
 )

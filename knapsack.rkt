@@ -252,6 +252,8 @@
   )
 )
 
+;___________________________TESTING PART_______________________________
+
 (define (simple-solve weights costs B)
   (define (calc-weight-or-fit chromosome x)
     (let ( (chromosomes-weights (zip chromosome x)) )
@@ -609,7 +611,11 @@
   (print-tests-cycle 0)
 )
 
-;support functions
+;___________________________VISUALIZING PART________________________________
+
+
+
+;___________________________SUPPORT FUNCTIONS_______________________________
 
 ;maps bibary string to indexes, starting from 1
 (define (binary-string-to-indexes bs)
