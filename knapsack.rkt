@@ -229,11 +229,26 @@
         ;(if (or (= new-stability MAX_STABILITY) (> generation-numb GENS_NUMB_LIMIT))
         ;(if (= new-stability MAX_STABILITY) 
         ;(if (> generation-numb GENS_NUMB_LIMIT) 
-        (if (= new-stability MAX_STABILITY) 
-          (list
-            (calc-weight-or-fit (car best-sf) weights)
-            (cdr best-sf)
-            (binary-string-to-indexes (car best-sf))
+        (if (= new-stability MAX_STABILITY)
+          (let*
+            (
+              (answer-weights (binary-string-to-elements (zip (car best-sf) weights)))
+              (answer-costs (binary-string-to-elements (zip (car best-sf) costs)))
+              (aw-for-render (if (null? answer-weights) '(0) answer-weights))
+              (ac-for-render (if (null? answer-costs) '(0) answer-costs))
+            )
+            (displayln (car best-sf))  
+            (render-result
+              aw-for-render
+              ac-for-render
+              B
+            )
+
+            (list
+              (calc-weight-or-fit (car best-sf) weights)
+              (cdr best-sf)
+              (binary-string-to-indexes (car best-sf))
+            )
           )
           (let*
             (
@@ -480,8 +495,8 @@
           (cond
             ((< selector 0.2) (test-solution-ss (gen-uncorrelated)))
             ((< selector 0.4) (test-solution-ss (gen-weakly-correlated)))
-            ((< selector 0.8) (test-solution-ss (gen-strongly-correlated)))
-            ((< selector 1) (test-solution-ss (gen-subset-sum)))
+            ((< selector 0.6) (test-solution-ss (gen-strongly-correlated)))
+            ((< selector 0.8) (test-solution-ss (gen-subset-sum)))
             (else  (test-solution-big))
           )
         )
@@ -701,9 +716,9 @@
         (
           (p (new dc-path%))
           (font (make-font #:size 24 #:family 'swiss #:weight 'bold))
-          (str (string-append "Knapsack filled " (number->string (/ total-weight max-weight))))
+          (str (string-append "Knapsack load: " (number->string total-weight) "/" (number->string max-weight)))
         )
-        (send p text-outline font str 0 0)
+        (send p text-outline font str -40 0)
         p
       )
     )
@@ -724,7 +739,7 @@
       (let 
         (
           (font (make-font #:size 12 #:family 'swiss #:weight 'bold))
-          (str (string-append "cost in [" (number->string start) ";" (number->string end) "]"))
+          (str (string-append "cost in [" (number->string (* 1.0 start)) ";" (number->string (* 1.0 end)) "]"))
         )
         (send dc set-brush brush)
         (send dc draw-rectangle 0 0 30 30)
@@ -830,6 +845,17 @@
         )
       )
       (zip bs (build-list (length bs) (lambda (x) (+ 1 x))))
+    )
+  )
+)
+
+; accepts zip of binary strings and lst and returns lst of elements corresponding to 1
+(define (binary-string-to-elements x)
+  (map
+    (lambda (x) (cdr x))  
+    (filter
+      (lambda (x) (car x))
+      x
     )
   )
 )
@@ -968,10 +994,10 @@
   ;395
 #|)|#
 
-;(main-genetic '(1 1 2 2) '(4 3 2 1) 3 4)
+; (main-genetic '(10 10 20 20) '(4 3 2 1) 1 4)
 ;(main-dummy '(1 1 2 2) '(4 3 2 1) 3 4)
 ;(main-genetic '(1 1 1 2) '(11 11 11 12) 3 20)
-;(main-genetic '(1 1 1 2 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) '(11 11 11 12 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) 200 20)
+; (main-genetic '(1 1 1 2 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) '(11 11 11 12 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 53 36 53) 200 20)
 ;(let ( (v '(1 1 1 2 72 22 77 10 55 35 72 41 30 62 82 21 46 82 59 2 34 55 23 25)) )  
   ;(printf "n: ~a\n" (length v))
   ;(main-dummy v v 200 20)
@@ -979,5 +1005,7 @@
 ; (start-testing 20 2)
 ;(print-tests 15)
 
-(render-result '(2 4 5 1 1 1) '(10 15 20 40 60 70) 15)
+(start-testing 1 2)
+; (render-result '(2 4 5 1 1 1) '(10 15 20 40 60 70) 15)
+; (render-result '() '() 15)
 ; (items-lst (zip '(2 4 5 1 1 1) '(10 15 20 40 60 70)))
