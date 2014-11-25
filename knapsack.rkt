@@ -681,11 +681,11 @@
 
     (define cost-categories-lst
       (list
-        (cons (+ min-cost (* 1 seg)) (new brush% [color "gray"]))
-        (cons (+ min-cost (* 2 seg)) (new brush% [color "blue"]))
-        (cons (+ min-cost (* 3 seg)) (new brush% [color "green"]))
-        (cons (+ min-cost (* 4 seg)) (new brush% [color "orange"]))
-        (cons (+ min-cost (* 5 seg)) (new brush% [color "yellow"]))
+        (cons (+ min-cost (* 1 seg)) (new brush% [stipple (read-bitmap "brick.jpg")]))
+        (cons (+ min-cost (* 2 seg)) (new brush% [stipple (read-bitmap "money.jpg")]))
+        (cons (+ min-cost (* 3 seg)) (new brush% [stipple (read-bitmap "orange.jpg")]))
+        (cons (+ min-cost (* 4 seg)) (new brush%  [stipple (read-bitmap "map.jpg")]))
+        (cons (+ min-cost (* 5 seg)) (new brush%  [stipple (read-bitmap "tomato.jpg")]))
       )
     )
 
@@ -709,6 +709,7 @@
           (item-height (quot-int knapsack-height (/ (car i) max-weight)))
         )
         (send dc set-brush (get-item-color (cdr i)))
+        (send dc set-pen "black" 1 'solid)
         (send dc translate 0 (- item-height))
         (send dc draw-rectangle 0 0 knapsack-width item-height)
       )
