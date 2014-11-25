@@ -439,8 +439,8 @@
 
       (let*
         (
-          (answer-size 10)
-          (useless-size 30)
+          (answer-size 20)
+          (useless-size 50)
           (min-cost 15)
           (answer-wc (gen-big-answer answer-size min-cost))
           (answer-weights (car answer-wc))
@@ -857,7 +857,12 @@
       (x-lim (- x-length 40))
       (y-lim (- y-length 40))
       (x-q (* 1.0 (/ x-lim (caar data))))
-      (y-q (* 1.0 (/ y-lim (cadar data))))
+      (y-q
+        (if (= (cadar data) 0)
+          1
+          (* 1.0 (/ y-lim (cadar data)))
+        )
+      )
 
       (dot-size 5)
       (dot-half (/ dot-size 2))
@@ -968,7 +973,7 @@
           (if (> n x-marks-numb)
             2
             (begin
-              (send dc draw-text (number->string (inexact->exact (round (/ (* n pix-step) y-q)))) -35 (- -10 (* n pix-step)))
+              (send dc draw-text (number->string (inexact->exact (round (/ (* n pix-step) y-q)))) -40 (- -10 (* n pix-step)))
               (mark-y-cycle (+ n 1))
             )
           )
