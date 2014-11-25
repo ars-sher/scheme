@@ -206,7 +206,7 @@
       (printf "new fitness-stability: ~a\n" new-stability)
     )
 
-    (define (knapsack-cycle population generation-numb last-fitness fitness-stability)
+    (define (knapsack-cycle population generation-numb last-fitness fitness-stability history)
       (define (sf-cmp< sf1 sf2)
         (< (cdr sf1) (cdr sf2))
       )
@@ -223,6 +223,17 @@
             )   
           )
           (elite (map (lambda (x) (car x)) sf-elite))
+          ; for process rendering
+          (sf-sorted (sort solutions-fitnesses sf-cmp<))
+          (best-f (cdr (list-ref sf-sorted (- (length sf-sorted) 1))))
+          (mean-f (cdr (list-ref sf-sorted (/ (length sf-sorted) 2))))
+          (worst-f (cdar sf-sorted))
+          (new-history 
+            (cons
+              (list generation-numb best-f mean-f worst-f)
+              history
+            )
+          )
         )
 
         ;(dbg generation-numb population solutions-fitnesses best-solution last-fitness new-stability elite)
@@ -237,13 +248,16 @@
               (aw-for-render (if (null? answer-weights) '(0) answer-weights))
               (ac-for-render (if (null? answer-costs) '(0) answer-costs))
             )
-            (displayln (car best-sf))  
+            ; draw process
+            (displayln new-history)
+            (render-process new-history)
+            ; draw result
             (render-result
               aw-for-render
               ac-for-render
               B
             )
-
+            ; return result in required form
             (list
               (calc-weight-or-fit (car best-sf) weights)
               (cdr best-sf)
@@ -262,13 +276,14 @@
               (+ generation-numb 1)
               (cdr best-sf)
               new-stability
+              new-history
             )
           )
         )
       )
     )
 
-    (knapsack-cycle (initialize-population) 0 0 0)
+    (knapsack-cycle (initialize-population) 1 0 0 '())
   )
 )
 
@@ -493,11 +508,11 @@
         ; (test . solution) pair
         (test-solution
           (cond
-            ((< selector 0.2) (test-solution-ss (gen-uncorrelated)))
-            ((< selector 0.4) (test-solution-ss (gen-weakly-correlated)))
-            ((< selector 0.6) (test-solution-ss (gen-strongly-correlated)))
-            ((< selector 0.8) (test-solution-ss (gen-subset-sum)))
-            (else  (test-solution-big))
+            ((< selector 0.6) (test-solution-big))
+            ((< selector 0.7) (test-solution-ss (gen-weakly-correlated)))
+            ((< selector 0.8) (test-solution-ss (gen-strongly-correlated)))
+            ((< selector 0.9) (test-solution-ss (gen-subset-sum)))
+            (else  (test-solution-ss (gen-uncorrelated)))
           )
         )
         (test (car test-solution))
@@ -771,8 +786,8 @@
       )
       (send dc set-smoothing 'smoothed)
 
-      (send dc translate knapsack-x knapsack-y)
       ; draw knapsack volume
+      (send dc translate knapsack-x knapsack-y)
       (send dc set-pen "black" 2 'long-dash)
       (send dc set-brush "white" 'transparent)
       (send dc draw-path knapsack-path)
@@ -782,9 +797,6 @@
       (send dc translate 0 knapsack-height)
       (foreach items-lst-sorted put-item) 
       (send dc set-transformation no-transformation)
-
-      ; (foreach items-lst-sorted displayln)
-      ; (displayln cost-categories-lst) 
 
       ; draw title
       (send dc translate 180 50)
@@ -812,8 +824,6 @@
     (
       (width 695)
       (heigth 637)
-      (width-center (/ width 2))
-      (heigth-center (/ heigth 2))
 
       (target (make-bitmap width heigth))
       (usls (send target load-file "knapsack.jpg"))
@@ -822,7 +832,6 @@
 
       (knapsack-width 120)
       (knapsack-height 310)
-      ; (items-lst (zip '(2 4 5 1 1 1) '(10 15 20 40 60 70)))
       (items-lst (zip weights-lst costs-lst))
       (usls (draw-result dc knapsack-width knapsack-height items-lst max-weight))
     )
@@ -831,7 +840,89 @@
   )
 )
 
+; accepts data in list of (generation-number . best-f . mean-f . worst-f) format
+(define (render-process data)
+  (let*
+    (
+      (width 695)
+      (heigth 637)
+      (target (make-bitmap width heigth))
+      (dc (new bitmap-dc% [bitmap target]))
+      (no-transformation (send dc get-transformation))
+
+      (origin-x 50)
+      (origin-y 520)
+      (x-length 500)
+      (y-length 500)
+      (x-lim (- x-length 40))
+      (y-lim (- y-length 40))
+      (x-q (* 1.0 (/ x-lim (caar data))))
+      (y-q (* 1.0 (/ y-lim (cadar data))))
+
+      (dot-size 5)
+      (dot-half (/ dot-size 2))
+    )
+
+    ; draw axis
+    (define axis-path
+      (let ([p (new dc-path%)])
+        (send p move-to origin-x origin-y)
+        (send p line-to (+ origin-x x-length) origin-y)
+        (send p line-to (+ origin-x x-length (- 20)) (+ origin-y 10))
+        (send p line-to (+ origin-x x-length) origin-y)
+        (send p line-to (+ origin-x x-length (- 20)) (- origin-y 10))
+        (send p line-to (+ origin-x x-length) origin-y)
+
+        (send p move-to origin-x origin-y)
+        (send p line-to origin-x (- origin-y y-length))
+        (send p line-to (- origin-x 10) (- origin-y y-length (- 20)))
+        (send p line-to origin-x (- origin-y y-length))
+        (send p line-to (+ origin-x 10) (- origin-y y-length (- 20)))
+        p
+      )
+    )
+
+    ; draw best, mean and worst f
+    (define (draw-dots d)
+      (let
+        (
+          (gen-numb (car d))
+          (best-f (cadr d))
+          (mean-f (caddr d))
+          (worst-f (cadddr d))
+        )
+        (send dc set-pen "white" 0 'transparent)
+
+        (send dc set-brush "red" 'solid)
+        (send dc draw-rectangle (- (* gen-numb x-q) dot-half) (- (+ (* worst-f y-q) dot-half)) dot-size dot-size)
+        (send dc set-brush "blue" 'solid)
+        (send dc draw-rectangle (- (* gen-numb x-q) dot-half) (- (+ (* mean-f y-q) dot-half)) dot-size dot-size)
+        (send dc set-brush "green" 'solid)
+        (send dc draw-rectangle (- (* gen-numb x-q) dot-half) (- (+ (* best-f y-q) dot-half)) dot-size dot-size)
+      )
+    )
+
+    ; (send dc set-smoothing 'smoothed)
+
+    ; draw axis
+    (send dc set-brush "white" 'transparent)
+    (send dc set-pen "black" 3 'solid)
+    (send dc draw-path axis-path)
+
+    ; draw dots
+    (send dc translate origin-x origin-y)
+    ; (draw-dots (car data))
+    (foreach data draw-dots)
+    (send dc set-transformation no-transformation)
+
+    (send target save-file "process.png" 'png)
+    ;(make-object image-snip% target)
+    
+  )
+)
+
 ;___________________________SUPPORT FUNCTIONS_______________________________
+
 
 ;maps binary string to indexes, starting from 1
 (define (binary-string-to-indexes bs)
