@@ -861,6 +861,13 @@
 
       (dot-size 5)
       (dot-half (/ dot-size 2))
+
+      (worst-brush (new brush% [color "purple"] [style 'solid]))
+      (mean-brush (new brush% [color "blue"] [style 'solid]))
+      (best-brush (new brush% [color "green"] [style 'solid]))
+
+      (x-marks-numb 10)
+      (y-marks-numb 10)
     )
 
     ; draw axis
@@ -893,12 +900,82 @@
         )
         (send dc set-pen "white" 0 'transparent)
 
-        (send dc set-brush "red" 'solid)
+        (send dc set-brush worst-brush)
         (send dc draw-rectangle (- (* gen-numb x-q) dot-half) (- (+ (* worst-f y-q) dot-half)) dot-size dot-size)
-        (send dc set-brush "blue" 'solid)
+        (send dc set-brush mean-brush)
         (send dc draw-rectangle (- (* gen-numb x-q) dot-half) (- (+ (* mean-f y-q) dot-half)) dot-size dot-size)
-        (send dc set-brush "green" 'solid)
+        (send dc set-brush best-brush)
         (send dc draw-rectangle (- (* gen-numb x-q) dot-half) (- (+ (* best-f y-q) dot-half)) dot-size dot-size)
+      )
+    )
+
+    ; draw mapping
+    (define (draw-mapping brush str)
+      (let 
+        (
+          (font (make-font #:size 12 #:family 'swiss #:weight 'bold))
+        )
+        (send dc set-brush brush)
+        (send dc draw-rectangle 0 5 15 15)
+        (send dc set-font font)
+        (send dc draw-text str 20 2)
+        (send dc translate 150 0)
+      )
+    )
+
+    (define (sign-axis)
+      (let 
+        (
+          (font (make-font #:size 12 #:family 'swiss #:weight 'bold))
+          (x-str "generations number")
+          (y-str "total cost")
+        )
+        (send dc set-font font)
+        (send dc draw-text x-str (- x-length 20) 15)
+        (send dc draw-text y-str -40 (- -20 y-length ))
+        (send dc draw-text "0" -15 0)
+      )
+    )
+
+    (define (mark-x)
+      (let 
+        (
+          (font (make-font #:size 12 #:family 'swiss #:weight 'bold))
+          (pix-step (/ x-lim x-marks-numb))
+        )
+        (define (mark-x-cycle n)
+          (if (> n x-marks-numb)
+            2
+            (begin
+              (send dc draw-text (number->string (inexact->exact (round (/ (* n pix-step) x-q)))) (* n pix-step) 0)
+              (mark-x-cycle (+ n 1))
+            )
+          )
+        )
+        (send dc set-font font)
+        (mark-x-cycle 1)
+      )
+    )
+
+    (define (mark-y)
+      (let 
+        (
+          (font (make-font #:size 12 #:family 'swiss #:weight 'bold))
+          (pix-step (/ y-lim y-marks-numb))
+          ; (number->string (* 1.0 start))
+        )
+        (define (mark-y-cycle n)
+          (if (> n x-marks-numb)
+            2
+            (begin
+              (send dc draw-text (number->string (inexact->exact (round (/ (* n pix-step) y-q)))) -35 (- -10 (* n pix-step)))
+              (mark-y-cycle (+ n 1))
+            )
+          )
+        )
+        (send dc set-font font)
+        (mark-y-cycle 1)
+        ; (send dc translate 150 0)
       )
     )
 
@@ -913,6 +990,24 @@
     (send dc translate origin-x origin-y)
     ; (draw-dots (car data))
     (foreach data draw-dots)
+    (send dc set-transformation no-transformation)
+
+    ; draw mapping
+    (send dc translate 50 570)
+    (draw-mapping best-brush (string-append "best solutions"))
+    (draw-mapping mean-brush (string-append "mean solutions"))
+    (draw-mapping worst-brush (string-append "worst solutions"))
+    (send dc set-transformation no-transformation)
+
+    ; sign axis
+    (send dc translate origin-x origin-y)
+    (sign-axis)
+    (send dc set-transformation no-transformation)
+
+    ; mark axis
+    (send dc translate origin-x origin-y)
+    (mark-x)
+    (mark-y)
     (send dc set-transformation no-transformation)
 
     (send target save-file "process.png" 'png)
