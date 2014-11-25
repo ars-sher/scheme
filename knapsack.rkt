@@ -733,7 +733,7 @@
           (font (make-font #:size 24 #:family 'swiss #:weight 'bold))
           (str (string-append "Knapsack load: " (number->string total-weight) "/" (number->string max-weight)))
         )
-        (send p text-outline font str -40 0)
+        (send p text-outline font str -60 0)
         p
       )
     )
@@ -847,6 +847,7 @@
       (width 695)
       (heigth 637)
       (target (make-bitmap width heigth))
+      (usls (send target load-file "empty.jpg"))
       (dc (new bitmap-dc% [bitmap target]))
       (no-transformation (send dc get-transformation))
 
@@ -984,7 +985,7 @@
       )
     )
 
-    ; (send dc set-smoothing 'smoothed)
+    (send dc set-smoothing 'smoothed)
 
     ; draw axis
     (send dc set-brush "white" 'transparent)
